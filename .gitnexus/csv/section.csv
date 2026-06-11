@@ -1,0 +1,93 @@
+id,name,filePath,startLine,endLine,level,content,description
+"Section:README.md:L1:HMPSAC_Fluid_Model_MOMDFJSP","HMPSAC_Fluid_Model_MOMDFJSP","README.md",1,41,1,"# HMPSAC_Fluid_Model_MOMDFJSP
+[![zread](https://img.shields.io/badge/Ask_Zread-_.svg?style=flat&color=00b0aa&labelColor=000000&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQuOTYxNTYgMS42MDAxSDIuMjQxNTZDMS44ODgxIDEuNjAwMSAxLjYwMTU2IDEuODg2NjQgMS42MDE1NiAyLjI0MDFWNC45NjAxQzEuNjAxNTYgNS4zMTM1NiAxLjg4ODEgNS42MDAxIDIuMjQxNTYgNS42MDAxSDQuOTYxNTZDNS4zMTUwMiA1LjYwMDEgNS42MDE1NiA1LjMxMzU2IDUuNjAxNTYgNC45NjAxVjIuMjQwMUM1LjYwMTU2IDEuODg2NjQgNS4zMTUwMiAxLjYwMDEgNC45NjE1NiAxLjYwMDFaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00Ljk2MTU2IDEwLjM5OTlIMi4yNDE1NkMxLjg4ODEgMTAuMzk5OSAxLjYwMTU2IDEwLjY4NjQgMS42MDE1NiAxMS4wMzk5VjEzLjc1OTlDMS42MDE1NiAxNC4xMTM0IDEuODg4MSAxNC4zOTk5IDIuMjQxNTYgMTQuMzk5OUg0Ljk2MTU2QzUuMzE1MDIgMTQuMzk5OSA1LjYwMTU2IDE0LjExMzQgNS42MDE1NiAxMy43NTk5VjExLjAzOTlDNS42MDE1NiAxMC42ODY0IDUuMzE1MDIgMTAuMzk5OSA0Ljk2MTU2IDEwLjM5OTlaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik0xMy43NTg0IDEuNjAwMUgxMS4wMzg0QzEwLjY4NSAxLjYwMDEgMTAuMzk4NCAxLjg4NjY0IDEwLjM5ODQgMi4yNDAxVjQuOTYwMUMxMC4zOTg0IDUuMzEzNTYgMTAuNjg1IDUuNjAwMSAxMS4wMzg0IDUuNjAwMUgxMy43NTg0QzE0LjExMTkgNS42MDAxIDE0LjM5ODQgNS4zMTM1NiAxNC4zOTg0IDQuOTYwMVYyLjI0MDFDMTQuMzk4NCAxLjg4NjY0IDE0LjExMTkgMS42MDAxIDEzLjc1ODQgMS42MDAxWiIgZmlsbD0iI2ZmZiIvPgo8cGF0aCBkPSJNNCAxMkwxMiA0TDQgMTJaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00IDEyTDEyIDQiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K&logoColor=ffffff)](https://zread.ai/Linshan-Ding/HMPSAC_Fluid_Model_MOMDFJSP)
+This is the code for the paper：
+
+**Data-driven hierarchical multi-policy deep reinforcement learning framework for multi-objective multiplicity dynamic flexible job shop scheduling**
+
+## Requirements:
+```
+Python==3.6.13
+CUDA==10.2.89
+Pytorch==1.10.0
+Numpy=1.19.5
+Conda==4.10.3
+```
+## Tips:
+```
+environment: the python-based discretation simulation environment of workshop scheduling
+data: the data of all instances
+agents: the code of main program
+result: save the trained model
+```
+## Citation
+If these code help you, please cite us paper:
+```
+@article{ding2024multi,
+  title={Multi-policy deep reinforcement learning for multi-objective multiplicity flexible job shop scheduling},
+  author={Ding, Linshan and Guan, Zailin and Rauf, Mudassar and Yue, Lei},
+  journal={Swarm and Evolutionary Computation},
+  volume={87},
+  pages={101550},
+  year={2024},
+  publisher={Elsevier}
+}
+```
+## contact
+If you have any questions,  feel free to contact：
+
+Email1: linshan_ding@hust.edu.cn
+
+Email2: linshandingzz@gmail.com
+","h1"
+"Section:README.md:L7:Requirements:","Requirements:","README.md",7,14,2,"
+## Requirements:
+```
+Python==3.6.13
+CUDA==10.2.89
+Pytorch==1.10.0
+Numpy=1.19.5
+Conda==4.10.3
+```
+## Tips:
+```
+environment: the python-based discretation simulation environment of workshop scheduling
+","h2"
+"Section:README.md:L15:Tips:","Tips:","README.md",15,21,2,"```
+## Tips:
+```
+environment: the python-based discretation simulation environment of workshop scheduling
+data: the data of all instances
+agents: the code of main program
+result: save the trained model
+```
+## Citation
+If these code help you, please cite us paper:
+```
+","h2"
+"Section:README.md:L22:Citation","Citation","README.md",22,34,2,"```
+## Citation
+If these code help you, please cite us paper:
+```
+@article{ding2024multi,
+  title={Multi-policy deep reinforcement learning for multi-objective multiplicity flexible job shop scheduling},
+  author={Ding, Linshan and Guan, Zailin and Rauf, Mudassar and Yue, Lei},
+  journal={Swarm and Evolutionary Computation},
+  volume={87},
+  pages={101550},
+  year={2024},
+  publisher={Elsevier}
+}
+```
+## contact
+If you have any questions,  feel free to contact：
+
+","h2"
+"Section:README.md:L35:contact","contact","README.md",35,41,2,"```
+## contact
+If you have any questions,  feel free to contact：
+
+Email1: linshan_ding@hust.edu.cn
+
+Email2: linshandingzz@gmail.com
+","h2"

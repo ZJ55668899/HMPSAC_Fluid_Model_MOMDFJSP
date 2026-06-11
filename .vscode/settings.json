@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "D:\\miniforge\\envs\\hmpsac\\python.exe",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}"
+  ],
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.useLibraryCodeForTypes": true
+}

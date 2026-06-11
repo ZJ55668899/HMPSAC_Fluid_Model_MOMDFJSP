@@ -1,0 +1,2612 @@
+id,name,filePath,content
+"File:README.md","README.md","README.md","# HMPSAC_Fluid_Model_MOMDFJSP
+[![zread](https://img.shields.io/badge/Ask_Zread-_.svg?style=flat&color=00b0aa&labelColor=000000&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQuOTYxNTYgMS42MDAxSDIuMjQxNTZDMS44ODgxIDEuNjAwMSAxLjYwMTU2IDEuODg2NjQgMS42MDE1NiAyLjI0MDFWNC45NjAxQzEuNjAxNTYgNS4zMTM1NiAxLjg4ODEgNS42MDAxIDIuMjQxNTYgNS42MDAxSDQuOTYxNTZDNS4zMTUwMiA1LjYwMDEgNS42MDE1NiA1LjMxMzU2IDUuNjAxNTYgNC45NjAxVjIuMjQwMUM1LjYwMTU2IDEuODg2NjQgNS4zMTUwMiAxLjYwMDEgNC45NjE1NiAxLjYwMDFaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00Ljk2MTU2IDEwLjM5OTlIMi4yNDE1NkMxLjg4ODEgMTAuMzk5OSAxLjYwMTU2IDEwLjY4NjQgMS42MDE1NiAxMS4wMzk5VjEzLjc1OTlDMS42MDE1NiAxNC4xMTM0IDEuODg4MSAxNC4zOTk5IDIuMjQxNTYgMTQuMzk5OUg0Ljk2MTU2QzUuMzE1MDIgMTQuMzk5OSA1LjYwMTU2IDE0LjExMzQgNS42MDE1NiAxMy43NTk5VjExLjAzOTlDNS42MDE1NiAxMC42ODY0IDUuMzE1MDIgMTAuMzk5OSA0Ljk2MTU2IDEwLjM5OTlaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik0xMy43NTg0IDEuNjAwMUgxMS4wMzg0QzEwLjY4NSAxLjYwMDEgMTAuMzk4NCAxLjg4NjY0IDEwLjM5ODQgMi4yNDAxVjQuOTYwMUMxMC4zOTg0IDUuMzEzNTYgMTAuNjg1IDUuNjAwMSAxMS4wMzg0IDUuNjAwMUgxMy43NTg0QzE0LjExMTkgNS42MDAxIDE0LjM5ODQgNS4zMTM1NiAxNC4zOTg0IDQuOTYwMVYyLjI0MDFDMTQuMzk4NCAxLjg4NjY0IDE0LjExMTkgMS42MDAxIDEzLjc1ODQgMS42MDAxWiIgZmlsbD0iI2ZmZiIvPgo8cGF0aCBkPSJNNCAxMkwxMiA0TDQgMTJaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00IDEyTDEyIDQiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K&logoColor=ffffff)](https://zread.ai/Linshan-Ding/HMPSAC_Fluid_Model_MOMDFJSP)
+This is the code for the paper：
+
+**Data-driven hierarchical multi-policy deep reinforcement learning framework for multi-objective multiplicity dynamic flexible job shop scheduling**
+
+## Requirements:
+```
+Python==3.6.13
+CUDA==10.2.89
+Pytorch==1.10.0
+Numpy=1.19.5
+Conda==4.10.3
+```
+## Tips:
+```
+environment: the python-based discretation simulation environment of workshop scheduling
+data: the data of all instances
+agents: the code of main program
+result: save the trained model
+```
+## Citation
+If these code help you, please cite us paper:
+```
+@article{ding2024multi,
+  title={Multi-policy deep reinforcement learning for multi-objective multiplicity flexible job shop scheduling},
+  author={Ding, Linshan and Guan, Zailin and Rauf, Mudassar and Yue, Lei},
+  journal={Swarm and Evolutionary Computation},
+  volume={87},
+  pages={101550},
+  year={2024},
+  publisher={Elsevier}
+}
+```
+## contact
+If you have any questions,  feel free to contact：
+
+Email1: linshan_ding@hust.edu.cn
+
+Email2: linshandingzz@gmail.com
+"
+"File:utilities/Utility_Functions.py","Utility_Functions.py","utilities/Utility_Functions.py","import math
+
+import numpy as np
+from abc import ABCMeta
+import torch
+from nn_builder.pytorch.NN import NN
+from torch.distributions import Categorical, normal, MultivariateNormal
+
+
+def abstract(cls):
+    return ABCMeta(cls.__name__, cls.__bases__, dict(cls.__dict__))
+
+
+def save_score_results(file_path, results):
+    """"""在给定的路径保存结果""""""
+    np.save(file_path, results)
+
+
+def standardized_rewards(rewards):
+    """"""标准化回报，均值为0，标准差为1""""""
+    mean_reward = np.mean(rewards)
+    std_reward = np.std(rewards)
+    return (rewards - mean_reward) / (std_reward + 1e-8)  # 1e-8 added for stability
+
+
+def normalized_rewards(rewards):
+    """"""归一化回报值""""""
+    max_value = np.max(rewards)
+    min_value = np.min(rewards)
+    rewards -= min_value
+    rewards = rewards.astype(float)
+    rewards /= (max_value - min_value + 1e-5)
+    return rewards
+
+
+def create_actor_distribution(action_types, actor_output, action_size):
+    """"""生成一个分布，并根据分布采用一个动作""""""
+    if action_types == ""DISCRETE"":
+        assert actor_output.size()[1] == action_size, ""Actor output the wrong size""
+        action_distribution = Categorical(actor_output)  # this creates a distribution to sample from
+    else:
+        assert actor_output.size()[1] == action_size * 2, ""Actor output the wrong size""
+        means = actor_output[:, :action_size].squeeze(0)
+        stds = actor_output[:,  action_size:].squeeze(0)
+        if len(means.shape) == 2:
+            means = means.squeeze(-1)
+        if len(stds.shape) == 2:
+            stds = stds.squeeze(-1)
+        if len(stds.shape) > 1 or len(means.shape) > 1:
+            raise ValueError(""Wrong mean and std shapes - {} -- {}"".format(stds.shape, means.shape))
+        action_distribution = normal.Normal(means.squeeze(0), torch.abs(stds))
+    return action_distribution
+
+
+class SharedAdam(torch.optim.Adam):
+    """"""
+    创建可在进程之间共享的adam优化器对象。对于像A3C这样的算法很有用.
+    """"""
+    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False):
+        super(SharedAdam, self).__init__(params, lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad)
+        for group in self.param_groups:
+            for p in group['params']:
+                state = self.state[p]
+                state['step'] = torch.zeros(1)
+                state['exp_avg'] = p.data.new().resize_as_(p.data).zero_()
+                state['exp_avg_sq'] = p.data.new().resize_as_(p.data).zero_()
+
+    def share_memory(self):
+        for group in self.param_groups:
+            for p in group['params']:
+                state = self.state[p]
+                state['step'].share_memory_()
+                state['exp_avg'].share_memory_()
+                state['exp_avg_sq'].share_memory_()
+
+    def step(self, closure=None):
+        """"""Performs a single optimization step.
+        Arguments:
+            closure (callable, optional): A closure that reevaluates the model and returns the loss.
+        """"""
+        loss = None
+        if closure is not None:
+            loss = closure()
+        for group in self.param_groups:
+            for p in group['params']:
+                if p.grad is None:
+                    continue
+                grad = p.grad
+                amsgrad = group['amsgrad']
+                state = self.state[p]
+                exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
+                if amsgrad:
+                    max_exp_avg_sq = state['max_exp_avg_sq']
+                beta1, beta2 = group['betas']
+                state['step'] += 1
+                if group['weight_decay'] != 0:
+                    grad = grad.add(group['weight_decay'], p.data)
+                # 衰减一、二矩运行平均系数
+                exp_avg.mul_(beta1).add_(grad, alpha=1 - beta1)
+                exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2)
+                if amsgrad:
+                    # Maintains the maximum of all 2nd moment running avg. till now
+                    torch.max(max_exp_avg_sq, exp_avg_sq, out=max_exp_avg_sq)
+                    # Use the max. for normalizing running avg. of gradient
+                    denom = max_exp_avg_sq.sqrt().add_(group['eps'])
+                else:
+                    denom = exp_avg_sq.sqrt().add_(group['eps'])
+                bias_correction1 = 1 - beta1 ** state['step'].item()
+                bias_correction2 = 1 - beta2 ** state['step'].item()
+                step_size = group['lr'] * math.sqrt(bias_correction2) / bias_correction1
+                p.data.addcdiv_(exp_avg, denom, value=-step_size)
+        return loss
+
+
+def flatten_action_id_to_actions(action_id_to_actions, global_action_id_to_primitive_action, num_primitive_actions):
+    """"""将action_id_to_actions字典中的值转换回它们所表示的基本动作""""""
+    flattened_action_id_to_actions = {}
+    for key in action_id_to_actions.keys():
+        actions = action_id_to_actions[key]
+        raw_actions = backtrack_action_to_primitive_actions(actions, global_action_id_to_primitive_action, num_primitive_actions)
+        flattened_action_id_to_actions[key] = raw_actions
+    return flattened_action_id_to_actions
+
+
+def backtrack_action_to_primitive_actions(action_tuple, global_action_id_to_primitive_action, num_primitive_actions):
+    """"""Converts an action tuple back to the primitive actions it represents in a recursive way.""""""
+    print(""Recursing to backtrack on "", action_tuple)
+    primitive_actions = range(num_primitive_actions)
+    if all(action in primitive_actions for action in action_tuple): return action_tuple #base case
+    new_action_tuple = []
+    for action in action_tuple:
+        if action in primitive_actions: new_action_tuple.append(action)
+        else:
+            converted_action = global_action_id_to_primitive_action[action]
+            print(new_action_tuple)
+            new_action_tuple.extend(converted_action)
+            print(""Should have changed: "", new_action_tuple)
+    new_action_tuple = tuple(new_action_tuple)
+    return backtrack_action_to_primitive_actions(new_action_tuple)
+"
+"File:utilities/Utility_Class.py","Utility_Class.py","utilities/Utility_Class.py","""""""
+通用类
+""""""
+import os
+import matplotlib.pyplot as plt, sys, openpyxl, numpy as np, copy, csv, os, re, pickle, mpl_toolkits.mplot3d.axes3d as axes3d
+from random import randint, uniform
+from matplotlib.ticker import ScalarFormatter
+from openpyxl.styles import numbers
+from scipy.spatial.distance import cdist
+from matplotlib.font_manager import FontProperties
+import matplotlib as mpl, pandas as pd, matplotlib.patches as mpatches
+from matplotlib.font_manager import FontProperties  # 中文显示问题
+# 设置显示问题
+font = FontProperties(fname=""SimHei.ttf"", size=12)  # 指定中文字体和字号
+os.environ[""KMP_DUPLICATE_LIB_OK""] = ""TRUE""
+mpl.rcParams['font.family'] = 'Times New Roman'  # 设置全局字体为Times New Roman
+plt.rc('font', family='Times New Roman')  # 设置英文字体# 英文显示问题
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号'-'显示为方块的问题
+
+
+class PlotFigure():
+    """"""画图类""""""
+    def __init__(self):
+        self.figure_name = ['帕累托前沿图', '甘特图', '收敛曲线图']
+
+    def Pareto_figure(self, solutions_dict, algorithms, instance, algorithm_names=None, local='upper left'):
+        """"""画帕累托图""""""
+        color_symbols = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'orange', 'purple', 'brown', 'pink', 'gray']
+        marker_symbols = ['*', 'o', 's', '<', 'D', 'p', 'h', 'x', '+', 'v', '^', '>']
+        fig, ax = plt.subplots()
+        for algorithm in algorithms:
+            indexed = algorithms.index(algorithm)
+            algorithm_data = np.array(solutions_dict[(algorithm, instance)])
+            if algorithm_names is None:
+                ax.scatter(algorithm_data[:, 0], algorithm_data[:, 1], c=color_symbols[indexed],
+                           marker=marker_symbols[indexed], label=algorithm)
+            else:
+                algorithm_index = algorithms.index(algorithm)
+                ax.scatter(algorithm_data[:, 0], algorithm_data[:, 1], c=color_symbols[indexed],
+                           marker=marker_symbols[indexed], label=algorithm_names[algorithm_index])
+
+        # 添加标题、轴标题和图例
+        ax.set_title('Pareto Front')
+        ax.set_xlabel('Makespan')
+        ax.set_ylabel('Total tardiness')
+        ax.legend(prop=FontProperties(family='Times New Roman'), loc=local)
+        plt.title(instance)
+        plt.tight_layout()
+        plt.savefig(instance + 'pareto_front.svg', format='svg')
+
+    def Pareto_figure_2D(self, solutions_dict, algorithms, instance, objectives, algorithm_names=None, local='upper left'):
+        """"""画帕累托图""""""
+        objectives_list = ['Makespan', 'Tardiness', 'Energy']
+        color_symbols = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'orange', 'purple', 'brown', 'pink', 'gray']
+        marker_symbols = ['*', 'o', 's', '<', 'D', 'p', 'h', 'x', '+', 'v', '^', '>']
+        fig, ax = plt.subplots()
+        for algorithm in algorithms:
+            indexed = algorithms.index(algorithm)
+            algorithm_data = np.array(solutions_dict[(algorithm, instance)])
+            if algorithm_names is None:
+                ax.scatter(algorithm_data[:, objectives[0]], algorithm_data[:, objectives[1]], c=color_symbols[indexed],
+                           marker=marker_symbols[indexed], label=algorithm)
+            else:
+                algorithm_index = algorithms.index(algorithm)
+                ax.scatter(algorithm_data[:, objectives[0]], algorithm_data[:, objectives[1]], c=color_symbols[indexed],
+                           marker=marker_symbols[indexed], label=algorithm_names[algorithm_index])
+
+        # 添加标题、轴标题和图例
+        ax.set_title('Pareto Front')
+        ax.set_xlabel(objectives_list[objectives[0]])
+        ax.set_ylabel(objectives_list[objectives[1]])
+        ax.legend(prop=FontProperties(family='Times New Roman'), loc=local)
+        plt.title(instance)
+        plt.savefig(instance + '_front_{}{}.svg'.format(objectives[0], objectives[1]), format='svg')
+
+    def Pareto_figure_3D(self, solutions_dict, algorithms, instance, algorithm_names=None, local='upper left'):
+        """"""画帕累托图""""""
+        color_symbols = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'orange', 'purple', 'brown', 'pink', 'gray']
+        marker_symbols = ['*', 'o', 's', '<', 'D', 'p', 'h', 'x', '+', 'v', '^', '>']
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        for algorithm in algorithms:
+            indexed = algorithms.index(algorithm)
+            algorithm_data = np.array(solutions_dict[(algorithm, instance)])
+            if algorithm_names is None:
+                ax.scatter(algorithm_data[:, 0], algorithm_data[:, 1], algorithm_data[:, 2], c=color_symbols[indexed],
+                           marker=marker_symbols[indexed], label=algorithm)
+            else:
+                algorithm_index = algorithms.index(algorithm)
+                ax.scatter(algorithm_data[:, 0], algorithm_data[:, 1], algorithm_data[:, 2], c=color_symbols[indexed],
+                           marker=marker_symbols[indexed], label=algorithm_names[algorithm_index])
+
+        # 添加标题、轴标题和图例
+        ax.set_title('Pareto Front')
+        ax.set_xlabel('Makespan')
+        ax.set_ylabel('Tardiness')
+        ax.set_zlabel('Energy')
+        ax.legend(prop=FontProperties(family='Times New Roman'), loc=local)
+        # 设置显示
+        ax.xaxis._axinfo[""color""] = (0.925, 0.125, 0.90, 0.25)
+        ax.xaxis.pane.set_color(""none"")
+        ax.yaxis.pane.set_color(""none"")
+        ax.zaxis.pane.set_color(""none"")
+        ax.xaxis._axinfo[""grid""].update({""linewidth"": .3, ""color"": ""gray""})
+        ax.yaxis._axinfo[""grid""].update({""linewidth"": .3, ""color"": ""gray""})
+        ax.zaxis._axinfo[""grid""].update({""linewidth"": .3, ""color"": ""gray""})
+        # 设置Z轴刻度位置
+        ax.zaxis._axinfo['juggled'] = (1, 2, 0)
+        # 使用 ScalarFormatter 来设置科学计数法
+        formatter = ScalarFormatter(useMathText=True)
+        ax.xaxis.set_major_formatter(formatter)
+        ax.yaxis.set_major_formatter(formatter)
+        ax.zaxis.set_major_formatter(formatter)
+        # 添加图标题
+        plt.title(instance)
+        plt.savefig(instance + 'pareto.svg', format='svg', bbox_inches='tight')
+
+
+class DataProcess:
+    """"""数据处理类""""""
+    def __init__(self):
+        self.function = ['计算帕累托解', 'GD', 'IGD', 'Spread', '写入pickle', '读取pickle']
+
+    def normalized_data(self, data, max_values):
+        """"""根据各目标最大值归一化数据""""""
+        max_values = self.to_numpy_array(max_values)
+        data = self.to_numpy_array(data)
+        # 对每个元素进行归一化操作
+        normalized_data = data / max_values
+        return normalized_data
+
+    def filter_pareto_front(self, population):
+        """"""返回解集中的帕累托前沿解""""""
+        population = self.to_numpy_array(population)
+        pareto_front = []
+        n = len(population)
+        for i in range(n):
+            dominated = False
+            for j in range(n):
+                if all(population[j] <= population[i]) and any(population[j] < population[i]):
+                    dominated = True
+                    break
+            if not dominated:
+                pareto_front.append(population[i])
+        pareto_front = np.unique(pareto_front, axis=0)
+        return pareto_front
+
+    def pareto_count_delete_one(self, solution, solutions_all):
+        """"""
+        :param solution: 删除的解
+        :param solutions_all: 解集
+        :return: 删除一个解后的非支配解数量
+        """"""
+        solutions_all.remove(solution)
+        solutions_pareto = self.filter_pareto_front(solutions_all).tolist()
+        return len(solutions_pareto)
+
+    def to_numpy_array(self, lst):
+        if isinstance(lst, np.ndarray):
+            return lst
+        else:
+            return np.array(lst)
+
+    def distance_square(self, point1, point2):
+        """"""计算两个点之间的欧氏距离""""""
+        return np.sum((point1 - point2) ** 2)
+
+    def calculate_igd(self, true_front, population):
+        """"""计算 IGD 值""""""
+        true_front = self.to_numpy_array(true_front)
+        population = self.to_numpy_array(population)
+        igd = 0.0
+        for true_point in true_front:
+            min_distance = np.inf
+            for point in population:
+                distance = self.distance_square(true_point, point)
+                distance = np.sqrt(distance)
+                if distance < min_distance:
+                    min_distance = distance
+            igd += min_distance
+        igd /= len(true_front)
+        return igd
+
+    def calculate_gd(self, true_front, population):
+        """"""计算 GD 值""""""
+        true_front = self.to_numpy_array(true_front)
+        population = self.to_numpy_array(population)
+        gd = 0.0
+        for point in population:
+            min_distance = np.inf
+            for true_point in true_front:
+                distance = self.distance_square(point, true_point)
+                if distance < min_distance:
+                    min_distance = distance
+            gd += min_distance
+        gd = np.sqrt(gd)
+        gd /= len(population)
+        return gd
+
+    def calculate_spread(self, population, true_front):
+        """"""计算 Spread 值""""""
+        true_front = self.to_numpy_array(true_front)
+        population = self.to_numpy_array(population)
+        diaa = []
+        for point1 in population:
+            min_distance = np.inf
+            for point2 in population:
+                distance = self.distance_square(point1, point2)
+                distance = np.sqrt(distance)
+                if distance < min_distance and distance != 0.0:
+                    min_distance = distance
+            diaa.append(min_distance)
+        daa = np.mean(np.array(diaa))
+        min_objectives_population = []
+        min_objectives_true_front = []
+        for i in range(len(true_front[0])):
+            min_index_population = np.argmin(population[:, i])
+            min_index_true_front = np.argmin(true_front[:, i])
+            min_objectives_population.append(population[min_index_population])
+            min_objectives_true_front.append(true_front[min_index_true_front])
+        distance_sum = 0
+        for point1, point2 in
+... [truncated]"
+"File:utilities/Parallel_Experience_Generator.py","Parallel_Experience_Generator.py","utilities/Parallel_Experience_Generator.py","import random
+import torch
+import sys
+from contextlib import closing
+# from pathos.multiprocessing import ProcessingPool as Pool
+from torch.multiprocessing import Pool
+from random import randint
+from utilities.OU_Noise import OU_Noise
+from utilities.Utility_Functions import create_actor_distribution
+
+
+class Parallel_Experience_Generator(object):
+    """"""
+    Plays n episode in parallel using a fixed agent.
+    """"""
+    def __init__(self, environment, policy, seed, hyper_parameters, action_size, use_GPU=False, action_choice_output_columns=None):
+        self.use_GPU = use_GPU
+        self.environment = environment
+        self.action_types = ""DISCRETE"" if self.environment.action_types == ""DISCRETE"" else ""CONTINUOUS""
+        self.action_size = action_size
+        self.policy = policy
+        self.exploration_epsilon = None
+        self.action_choice_output_columns = action_choice_output_columns
+        self.hyper_parameters = hyper_parameters
+        if self.action_types == ""CONTINUOUS"":
+            self.noise = OU_Noise(self.action_size, seed, self.hyper_parameters[""mu""], self.hyper_parameters[""theta""], self.hyper_parameters[""sigma""])
+
+    def play_n_episodes(self, n, exploration_epsilon=None):
+        """"""
+        Plays n episodes in parallel using the fixed policy and returns the data
+        """"""
+        self.exploration_epsilon = exploration_epsilon
+        with closing(Pool(processes=n)) as pool:  # 创建上下文管理器，在执行过程离开with语句体时自动执行object.close()
+            results = pool.map(self, range(n))  # 调用__call__(self, n)
+            pool.terminate()  # 结束工作进程，不再处理未处理的任务
+        states_for_all_episodes = [episode[0] for episode in results]
+        actions_for_all_episodes = [episode[1] for episode in results]
+        rewards_for_all_episodes = [episode[2] for episode in results]
+        objects_for_all_episodes = [episode[3] for episode in results]
+        return states_for_all_episodes, actions_for_all_episodes, rewards_for_all_episodes, objects_for_all_episodes
+
+    def __call__(self, n):
+        exploration = max(0.0, random.uniform(self.exploration_epsilon / 3.0, self.exploration_epsilon * 3.0))
+        return self.play_1_episode(exploration)
+
+    def play_1_episode(self, epsilon_exploration):
+        """"""
+        Plays 1 episode using the fixed policy and returns the data|一条轨迹
+        """"""
+        state = self.environment.reset()
+        done = False
+        episode_states = []
+        episode_actions = []
+        episode_rewards = []
+        objects = []
+        while not done:
+            action = self.pick_action(self.policy, state, epsilon_exploration)
+            next_state, reward, done = self.environment.step(action)
+            if self.hyper_parameters[""clip_rewards""]:
+                reward = max(min(reward, 1.0), -1.0)
+            episode_states.append(state)
+            episode_actions.append(action)
+            episode_rewards.append(reward)
+            state = next_state
+        objects.append(self.environment.delay_time_sum)
+        return episode_states, episode_actions, episode_rewards, objects
+
+    def reset_game(self):
+        """"""
+        Resets the game environment so it is ready to play a new episode
+        """"""
+        seed = randint(0, sys.maxsize)
+        torch.manual_seed(seed)  # Need to do this otherwise each worker generates same experience
+        state = self.environment.reset()
+        if self.action_types == ""CONTINUOUS"":
+            self.noise.reset()
+        return state
+
+    def pick_action(self, policy, state, epsilon_exploration=None):
+        """"""Picks an action using the policy""""""
+        if self.action_types == ""DISCRETE"":
+            if random.random() <= epsilon_exploration:
+                action = random.randint(0, self.action_size - 1)
+                return action
+
+        state = torch.from_numpy(state).float().unsqueeze(0)
+        actor_output = policy.forward(state)
+        if self.action_choice_output_columns is not None:
+            actor_output = actor_output[:, self.action_choice_output_columns]
+        action_distribution = create_actor_distribution(self.action_types, actor_output, self.action_size)
+        action = action_distribution.sample().cpu()
+
+        if self.action_types == ""CONTINUOUS"":
+            action += torch.Tensor(self.noise.sample())
+        else:
+            action = action.item()
+        return action"
+"File:utilities/OU_Noise.py","OU_Noise.py","utilities/OU_Noise.py","import numpy as np
+import random
+import copy
+
+
+class OU_Noise():
+    """"""Ornstein-Uhlenbeck process.""""""
+    def __init__(self, size, seed, mu=0., theta=0.15, sigma=0.2):
+        self.mu = mu * np.ones(size)
+        self.theta = theta
+        self.sigma = sigma
+        self.state = None
+        self.reset()
+
+    def reset(self):
+        """"""将内部状态(= noise)重置为均值(mu)""""""
+        self.state = copy.copy(self.mu)
+
+    def sample(self):
+        """"""更新内部状态并将其作为噪声样本返回""""""
+        dx = self.theta * (self.mu - self.state) + self.sigma * np.array([np.random.normal() for _ in range(len(self.state))])
+        self.state += dx
+        return self.state"
+"File:environments/MO_DFJSP_instance_read.py","MO_DFJSP_instance_read.py","environments/MO_DFJSP_instance_read.py","# -*- coding: utf-8 -*-
+import copy
+import csv, os, re
+
+
+class Data():
+    def __init__(self, path=None, file_name=None):
+        self.file_name = file_name  # 算例文件名
+        self.csv_name_list = ['based_data.csv', 'process_data.csv', 'order_data.csv', 'machine_data.csv']
+        self.path = path  # 路径
+        # 基础数据信息 工件类型数， 机器数， 订单数, 延期度
+        self.kind_count, self.machine_count, self.order_count, self.DDT = self.read(self.csv_name_list[0])
+        self.machine_tuple = tuple(m for m in range(self.machine_count))  # 机器元组
+        self.order_tuple = tuple(s for s in range(self.order_count))  # 订单元组
+        self.kind_tuple = tuple(r for r in range(self.kind_count))  # 工件类型元组
+        # 订单信息 订单中各类型工件数量， 订单到达时间， 订单交期时间
+        self.count_sr_dict, self.time_arrive_s_dict, self.time_delivery_s_dict = self.read(self.csv_name_list[2])
+        # 提取出机器待机功率+故障信息
+        self.power_m_dict, self.breakdown_m_dict = self.read(self.csv_name_list[3])
+        # 加工信息 工序元组索引，可选机器元组索引，在各机器上的加工时间
+        self.task_r_dict, self.machine_rj_dict, self.time_rjm_dict, self.power_mrj_dict = self.read(self.csv_name_list[1])
+        self.kind_task_m_dict, self.kind_task_tuple, self.time_mrj_dict, self.time_rj_dict = self.process()
+
+    def process(self):
+        """"""生成额外索引""""""
+        kind_task_tuple = tuple((r, j) for r in self.kind_tuple for j in self.task_r_dict[r])  # 工序类型元组
+        kind_task_m_dict = {m: tuple((r, j) for (r, j) in kind_task_tuple if m in self.machine_rj_dict[(r, j)]) for m in self.machine_tuple}
+        time_mrj_dict = {m: {(r, j): self.time_rjm_dict[(r, j)][m] for (r, j) in kind_task_m_dict[m]} for m in self.machine_tuple}
+        time_rj_dict = {(r, j): sum([time_mrj_dict[m][(r, j)] for m in self.machine_rj_dict[(r, j)]]) / len(self.machine_rj_dict[(r, j)]) for (r, j) in kind_task_tuple}
+        return kind_task_m_dict, kind_task_tuple, time_mrj_dict, time_rj_dict
+
+    def str_int_tuple(self, s):
+        """"""字符串中提取数字并转为int类型元组""""""
+        nums = [int(i) for i in re.findall(r'\d+', s)]
+        return tuple(nums)
+
+    def str_int(self, s):
+        """"""字符串中提取数字并转为int类型""""""
+        nums = [int(i) for i in re.findall(r'\d+', s)]
+        return nums[0]
+
+    def read(self, csv_name):
+        """"""读取文件数据""""""
+        data_file = os.path.join(self.path, self.file_name, csv_name)
+        with open(data_file, 'r') as f:
+            reader = csv.reader(f)
+            rows = []
+            for row in reader:
+                rows.append(row)
+        if csv_name == 'based_data.csv':
+            kind_count = self.str_int(rows[1][0])
+            machine_count = self.str_int(rows[1][1])
+            order_count = self.str_int(rows[1][2])
+            DDT = self.str_int(rows[1][3])
+            return kind_count, machine_count, order_count, DDT
+        elif csv_name == 'machine_data.csv':
+            power_m_dict = {m: None for m in self.machine_tuple}
+            breakdown_m_dict = {m: [] for m in self.machine_tuple}
+            with open(data_file, 'r') as f:
+                reader = csv.reader(f)
+                next(reader)  # 跳过标题头
+                for row in reader:
+                    machine = self.str_int(row[0])
+                    idle_power = self.str_int(row[1])
+                    # 只在第一次读取机器信息时设置待机功率，避免重复设置
+                    if power_m_dict[machine] is None:
+                        power_m_dict[machine] = idle_power
+                    # 读取故障信息，如果有的话
+                    if len(row) > 2:
+                        breakdown_start = self.str_int(row[2])
+                        breakdown_end = self.str_int(row[3])
+                        breakdown_m_dict[machine].append((breakdown_start, breakdown_end))
+            return power_m_dict, breakdown_m_dict
+        elif csv_name == 'process_data.csv':
+            task_r_dict = {kind: [] for kind in self.kind_tuple}
+            machine_rj_dict = {}
+            time_rjm_dict = {}
+            power_mrj_dict = {m: {} for m in self.machine_tuple}
+            for row in rows[1:]:
+                kind = self.str_int(row[0])
+                task = self.str_int(row[1])
+                machine_str = self.str_int_tuple(row[2])
+                time_str = self.str_int_tuple(row[3])
+                power_str = self.str_int_tuple(row[4])
+                task_r_dict[kind].append(task)
+                machine_rj_dict[(kind, task)] = machine_str
+                time_rjm_dict[(kind, task)] = time_str
+                # 读取加工功率数据
+                for m, power in zip(machine_str, power_str):
+                    power_mrj_dict[m][(kind, task)] = power
+            # 预处理数据
+            for key, value in task_r_dict.items():
+                task_r_dict[key] = tuple(value)
+            for kind in self.kind_tuple:
+                for task in task_r_dict[kind]:
+                    time_machine = {}
+                    for machine, time in zip(machine_rj_dict[(kind, task)], time_rjm_dict[(kind, task)]):
+                        time_machine[machine] = time
+                    time_rjm_dict[(kind, task)] = copy.deepcopy(time_machine)
+            return task_r_dict, machine_rj_dict, time_rjm_dict, power_mrj_dict
+        else:
+            count_sr_dict = {}
+            time_arrive_s_dict = {}
+            time_delivery_s_dict = {}
+            for row in rows[1:]:
+                order = self.str_int(row[0])
+                time_arrive = self.str_int(row[1])
+                time_delivery = self.str_int(row[2])
+                kind_count = self.str_int_tuple(row[3])
+                count_sr_dict[order] = kind_count
+                time_arrive_s_dict[order] = time_arrive
+                time_delivery_s_dict[order] = time_delivery
+            return count_sr_dict, time_arrive_s_dict, time_delivery_s_dict
+
+
+# 测试
+if __name__ == '__main__':
+    # 读取功率信息到csv文件
+    path = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/data/industrial'
+    path_write = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/data/industrial/power.csv'
+    file_name = 'DDT0.5_M20_S5'
+    kind_name = ['K38A', 'K38B', 'K50']
+    data = Data(path, file_name)
+    for m in data.machine_tuple:
+        with open(path_write, mode='a', newline='') as file:
+            writer = csv.writer(file)
+            row = ['M' + str(m)]
+            # 添加工序+功率
+            for (kind, task) in data.kind_task_m_dict[m]:
+                row.extend([kind_name[kind] + '_' + str(task) + '(' + str(data.power_mrj_dict[m][(kind, task)]/1000) + ')'])
+            writer.writerow(row)
+
+    # file_name = 'DDT0.5_M10_S1'
+    # path = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/data/HMPSAC'
+    # path_write = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/results/HMPSAC/task_number.csv'
+    # file_name_list \
+    #     = ['DDT0.5_M10_S1', 'DDT0.5_M10_S3', 'DDT0.5_M10_S5', 'DDT0.5_M15_S1', 'DDT0.5_M15_S3', 'DDT0.5_M15_S5',
+    #        'DDT0.5_M20_S1', 'DDT0.5_M20_S3', 'DDT0.5_M20_S5', 'DDT1.0_M10_S1', 'DDT1.0_M10_S3', 'DDT1.0_M10_S5',
+    #        'DDT1.0_M15_S1', 'DDT1.0_M15_S3', 'DDT1.0_M15_S5', 'DDT1.0_M20_S1', 'DDT1.0_M20_S3', 'DDT1.0_M20_S5',
+    #        'DDT1.5_M10_S1', 'DDT1.5_M10_S3', 'DDT1.5_M10_S5', 'DDT1.5_M15_S1', 'DDT1.5_M15_S3', 'DDT1.5_M15_S5',
+    #        'DDT1.5_M20_S1', 'DDT1.5_M20_S3', 'DDT1.5_M20_S5']
+    # for file_name in file_name_list:
+    #     data = Data(path, file_name)
+    #     # 计算工序总数并写入文件
+    #     task_total_number = 0
+    #     for s in data.order_tuple:
+    #         for r in data.kind_tuple:
+    #             task_total_number += data.count_sr_dict[s][r] * len(data.task_r_dict[r])
+    #     print(file_name + ':', task_total_number)
+    #     # 写入文件
+    #     with open(path_write, mode='a', newline='') as file:
+    #         writer = csv.writer(file)
+    #         row = [file_name, task_total_number]
+    #         writer.writerow(row)
+"
+"File:environments/MO_DFJSP_breakdown.py","MO_DFJSP_breakdown.py","environments/MO_DFJSP_breakdown.py","""""""
+多目标动态柔性作业车间调度环境
+目标：最大完工时间+总延期时间+机器平均利用率+机器总负荷+最大机器负荷+加工总能耗（机器启动功率+机器待机功率+机器加工功率）+生产成本
+动态因素：新订单到达+机器故障
+""""""
+import random, math, time
+import numpy as np
+from environments.class_MODFJSP import FJSP
+from utilities.Utility_Class import MyError, FigGan, AddData
+
+
+class MO_DFJSP_Environment(FJSP):
+    """"""单目标柔性作业车间调度环境""""""
+    def __init__(self, use_instance=True, **kwargs):
+        super().__init__(use_instance=use_instance, **kwargs)
+        # 封装基本属性
+        self.step_count = 0  # 决策步
+        self.step_time = 0  # 时间点
+        self.order_arrive_time = 0  # 顶顶那到达时间点
+        self.last_observation_state = None  # 上一步观察到的状态 v(t-1)
+        self.observation_state = None  # 当前时间步的状态 v(t)
+        self.state_gap = None  # v(t) - v(t-1)
+        self.state = None  # s(t)
+        self.next_state = None  # 下一步状态  s(t+1)
+        self.reward = None  # 即时奖励
+        self.done = False  # 是否为终止状态
+        # 动作和观察的状态空间维度
+        self.actions_size = [12, 10]  # 二维离散动作空间
+        self.action_tuple = tuple((a1, a2) for a1 in range(self.actions_size[0]) for a2 in range(self.actions_size[1]))
+        self.action_space = [a for a in range(self.actions_size[0])]
+        self.state_size = 30  # 状态空间
+        self.action_types = ""DISCRETE""  # 动作类型
+        self.observation_space = 15  # 观察的状态向量空间
+        self.reward_sum = 0  # 累计回报
+        self.completion_time = 0  # 当前时间点完工时间
+        self.completion_time_last = 0  # 上一时间步完工时间
+        self.utilize_rate = 0  # 当前时间点机器平均利用率
+        self.utilize_rate_last = 0  # 上一时间点机器平均利用率
+        self.energy_consumption = 0  # 总能耗
+        self.energy_consumption_last = 0  # 上一步骤总能耗
+        # 工序和机器选择规则相关属性
+        self.order_object_list = []  # 未处理订单列表
+        self.kind_task_delay_e_list = []  # 估计延期工序类型列表
+        self.kind_task_delay_a_list = []  # 实际延期工序类型列表
+        self.kind_task_delay_time_a = {}  # 工序类型实际延期时间
+        self.kind_task_delay_time_e = {}  # 工序类型估计延期时间
+        self.kind_task_delivery_urgency = {}  # 工件类型的交期紧急度
+        self.kind_task_due_date = {}  # 工序类型的最小交期
+        # 回报计算相关属性
+        self.delay_time_sum_last = 0  # 工件上一步实际总延期时间
+        self.delay_time_sum = 0  # 当前时间步工件实际总延期时间
+        self.delay_time_sum_processed = 0  # 已完工工件的实际总延期时间
+        self.delay_time_sum_unprocessed = 0  # 未完工工件的实际总延期时间
+        self.delay_time_sum_unprocessed_last = 0  # 上一时间步未完工工件的实际总延期时间
+        self.gap_ave_value_last = 0  # 上一时间步的工序类型gap均值
+        # print(""成功定义环境类"")
+
+    def reset(self):
+        """"""重置环境状态""""""
+        self.order_object_list = [self.order_dict[s] for s in self.order_tuple]  # 未到达订单对象列表
+        self.reset_parameter()  # 初始化参数对象中的列表和字典
+        self.reset_object_add(self.order_object_list[0])  # 新订单到达后更新各字典对象
+        self.order_object_list.remove(self.order_object_list[0])  # 更新未到达订单对象列表
+        # 重置回报相关属性
+        self.delay_time_sum_last = 0  # 上一时间步工件实际总延期时间
+        self.delay_time_sum = 0  # 当前时间步工件实际总延期时间
+        self.delay_time_sum_processed = 0  # 已完工工件的总延期时间
+        self.delay_time_sum_unprocessed = 0  # 未完工工件的总延期时间
+        self.delay_time_sum_unprocessed_last = 0
+        self.reward_sum = 0  # 累计回报
+        self.gap_ave_value_last = 0
+        self.completion_time_last = 0  # 上一时间步完工时间
+        self.completion_time = 0
+        self.utilize_rate = 0  # 当前时间点机器平均利用率
+        self.utilize_rate_last = 0  # 上一时间点机器平均利用率
+        self.energy_consumption = 0  # 总能耗
+        self.energy_consumption_last = 0  # 上一步骤总能耗
+        # 重置时间步和当前时间点
+        self.step_count = 0
+        self.step_time = 0
+        # 重置上一时间步和当前时间步观察到的状态
+        self.last_observation_state = self.state_extract()  # 上一步观察到的状态 v(t-1)
+        self.observation_state = self.state_extract()  # 当前时间步的状态 v(t)
+        self.state_gap = np.array(self.observation_state) - np.array(self.last_observation_state)  # v(t) - v(t-1)
+        self.state = np.concatenate((np.array(self.observation_state), self.state_gap))  # 状态向量 [v(t), v(t) - v(t-1)]
+        self.next_state = None  # 下一步状态
+        self.reward = None  # 即时奖励
+        self.done = False  # 是否为终止状态
+        return self.state
+
+    def state_extract(self):
+        """"""
+        提取状态向量 更新相关参数
+        """"""
+        # M = len(self.machine_idle_list) / self.machine_count  # 空闲机器数占总机器数的比例
+        DDT = self.DDT  # 交期紧急度
+        M = self.machine_count  # 机器数
+        S = self.order_count
+        utilize_rate_ave = self.utilize_rate_ave  # 机器平均利用率
+        utilize_rate_std = math.sqrt(sum(math.pow(machine_object.utilize_rate - utilize_rate_ave, 2)
+                                         for m, machine_object in self.machine_dict.items())/self.machine_count)  # 机器利用率标准差
+        ct_m_ave = self.ct_m_ave  # 机器的平均完工时间
+        ct_m_std = math.sqrt(sum(math.pow(machine_object.time_end - ct_m_ave, 2) for m, machine_object
+                                 in self.machine_dict.items())/self.machine_count)   # 机器完工时间标准差
+        ratio_idle = len(self.fluid_kind_task_available_list)/(len(self.kind_task_available_list) + 1e-08)  # 可选工序类型数比值
+        cro_ave = sum(kind_task_object.finish_rate for (r, j), kind_task_object in
+                      self.kind_task_dict.items())/len(self.kind_task_tuple)  # 工序类型完工率均值
+        cro_std = math.sqrt(sum(math.pow(kind_task_object.finish_rate - cro_ave, 2) for (r, j), kind_task_object
+                                in self.kind_task_dict.items())/len(self.kind_task_tuple))  # 工序类型完工率标准差
+        gap_ave = sum(kind_task_object.gap_rate for (r, j), kind_task_object
+                      in self.kind_task_dict.items())/len(self.kind_task_tuple)  # 工序类型gap_rj均值
+        gap_std = math.sqrt(sum(math.pow(kind_task_object.gap_rate - gap_ave, 2) for (r, j), kind_task_object
+                                in self.kind_task_dict.items())/len(self.kind_task_tuple))  # 工序类型gap_rj标准差
+        gap_m_ave = sum(machine_object.gap_ave for m, machine_object in self.machine_dict.items())/self.machine_count  # 机器gap_m均值
+        gap_m_std = math.sqrt(sum(math.pow(machine_object.gap_ave - gap_m_ave, 2) for m, machine_object
+                                 in self.machine_dict.items())/self.machine_count)   # 机器gap_m标准差
+        dro_a, dro_e, drj_a, drj_e = self.update_parameter()  # 返回工序实际和估计延迟率、工件实际和估计延迟率+更新相关参数
+        return [DDT, M, S, ct_m_std, ratio_idle, cro_ave, cro_std, gap_ave, gap_std, gap_m_ave, gap_m_std, dro_a, dro_e, drj_a, drj_e]
+
+    def update_parameter(self):
+        """"""
+        计算当前时间步：剩余工序实际延迟率和估计延迟率+剩余工件实际延迟率+估计延迟率
+        更新参数：工序类型的估计/实际延期时间最大值+工序类型的最小交期值+实际/估计延迟工序类型集合
+        """"""
+        delay_task_number_a = 0  # 实际延迟工序总数
+        delay_task_number_e = 0  # 估计延迟工序总数
+        task_number = 0  # 剩余工序总数
+        delay_job_number_a = 0  # 实际延迟工件总数
+        delay_job_number_e = 0  # 估计延迟工件总数
+        job_number = 0  # 剩余工件总数
+        self.delay_time_sum_unprocessed = 0  # 剩余工件的实际延期时间
+        self.kind_task_delay_e_list = []  # 估计延期工序类型列表
+        self.kind_task_delay_a_list = []  # 实际延期工序类型列表
+        # time_start_point = max(self.ct_m_ave, self.step_time)  # 估计开始时间点
+        time_start_point = self.step_time  # 时间点
+        # 依据流体模型计算各值: 计算剩余工件的实际延总数和估计延迟总数
+        for r, kind_object in self.kind_dict.items():
+            job_number += len(kind_object.job_unprocessed_list)  # 剩余工件总数
+            kind_end_task_object = self.kind_task_dict[(r, self.task_r_dict[r][-1])]  # 该类工件的最后一道工序对象
+            for job_index, job_object in enumerate(kind_end_task_object.job_unprocessed_list):
+                if time_start_point > job_object.due_date:
+                    delay_job_number_a += 1  # 剩余工件的实际延迟数
+                    self.delay_time_sum_unprocessed += (time_start_point - job_object.due_date)  # 更新未完工工件的实际总延迟时间
+                if time_start_point + kind_end_task_object.fluid_time_sum*(job_index + 1) > job_object.due_date:
+                    delay_job_number_e += 1  # 剩余工件的估计延迟数
+        # 计算剩余工序的实际延迟总数和估计延迟总数
+        for (r, j), kind_task_object in self.kind_task_dict.items():
+            task_residue_rj = len(kind_task_object.task_unprocessed_list)  # rj的剩余工序总数
+            task_number += task_residue_rj  # 更新剩余工序总数
+            task_delay_rj_a = 0  # rj实际延期工序总数
+            task_delay_rj_e = 0  # rj估计延期工序总数
+            task_delay_time_rj_a = []  # rj 中未处理工序对象的(time_now-time_due_date)列表
+            task_delay_time_rj_e = []  # rj 中未处理工序对象的(estimate_time-due_date)列表
+            for task_index, task_object in enumerate(kind_task_object.task_unprocessed_list):
+                if time_start_point > task_object.due_date:
+                    task_delay_rj_a += 1
+                if time_start_point + kind_task_object.fluid_time_sum*(task_index + 1) > task_object.due_date:
+                    task_delay_rj_e += 1
+                task_delay_time_rj_a.append(time_start_point - task_object.due_date)
+                task_delay_time_rj_e.append(time_start_point + kind_task_object.fluid_time_sum*(task_index + 1) -
+                                            task_object.due_date)
+            # 更新实际和估计延迟工序数
+            delay_task_number_a += task_delay_rj_a  # 更新实际延期工序数
+            delay_task_number_e += task_delay_rj_e  # 更新估计延期工序数
+            # 各工序最大延期时间/实际和估计延期工序类型
+            if (r, j) in self.kind_task_available_list:
+                if task_delay_rj_a > 0:
+                    self.kind_task_delay_a_list.append((r, j))  # 实际延期工序类型列表
+                    self.kind_task_delay_time_a[(r, j)] = max(task_delay_time_rj_a)  # rj最大实际延期时间
+                if task_delay_rj_e > 0:
+                    self.kind_task_delay_e_list.append((r, j))  # 估计延期工序类型列表
+                    self.kind_task_delay_time_e[(r, j)] = max(task_delay_time_rj_e)  # rj最大估计延期时间
+                # 更新rj交期紧急度
+                self.kind_task_delivery_urgency[(r, j)] = sum(task_delay_time_rj_e)/task_residue_rj  # rj交期紧急度
+                self.kind_task_due_date[(r, j)] = kind_task_object.due_date_min  # 最小交期时间
+        # 输出延迟率
+        if not self.done:
+            dro_a = delay_task_number_a / task_
+... [truncated]"
+"File:environments/Instance_generate.py","Instance_generate.py","environments/Instance_generate.py","# -*- coding: utf-8 -*-
+""""""
+随机生成训练实例
+""""""
+from random import randint, uniform
+import numpy as np, copy, csv
+# 英文显示问题
+import matplotlib.pyplot as plt
+plt.rc('font', family='Times New Roman')  # 设置英文字体
+# 中文显示问题
+from matplotlib.font_manager import FontProperties
+font = FontProperties(fname=""SimHei.ttf"", size=12)  # 指定中文字体和字号
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号'-'显示为方块的问题
+# 报错问题
+import os
+os.environ[""KMP_DUPLICATE_LIB_OK""] = ""TRUE""
+
+
+class Instance():
+    """"""
+    问题特点
+    文件命名方式 DDT0.5_M10_S1
+    """"""
+    def __init__(self, DDT=None, M=None, S=None):
+        # 问题特点
+        self.DDT = DDT  # 交期紧急度
+        self.machine_count = M  # 机器数
+        self.machine_tuple = tuple(m for m in range(self.machine_count))  # 机器元组
+        self.order_count = S  # 新到达的订单总数
+        self.order_tuple = tuple(s for s in range(self.order_count))  # 订单元组
+        self.kind_count = self.kind_count_random  # 工件类型数
+        self.kind_tuple = tuple(r for r in range(self.kind_count))  # 工件类型元组
+        self.file_name = 'DDT' + str(DDT) + '_M' + str(M) + '_S' + str(S)  # 算例文件夹名
+        # 工序元组索引，可选机器元组索引，在各机器上的加工时间，订单中各类型工件数量， 订单到达时间， 订单交期时间
+        self.task_r_dict, self.machine_rj_dict, self.kind_task_m_dict, self.time_rjm_dict, self.count_sr_dict, \
+        self.time_arrive_s_dict, self.time_delivery_s_dict, self.kind_task_tuple, self.time_mrj_dict, \
+        self.time_rj_dict, self.power_mrj_dict, self.power_m_dict = self.process_information()
+
+    """"""工件类型总数""""""
+    @property
+    def kind_count_random(self):
+        return randint(3, 12)
+    """"""每种工件类型的工序数""""""
+    @property
+    def J_r(self):
+        return randint(3, 5)
+    """"""工序在可选机器上的加工时间""""""
+    @property
+    def t_rjm(self):
+        return randint(40, 400)
+    """"""每个订单中包含的每种工件类型的工件数量""""""
+    @property
+    def N_sr(self):
+        return randint(5, 50)
+    """"""订单到达时间间隔""""""
+    @property
+    def t_si(self):
+        return uniform(100, 200)
+    """"""工序在可选机器上的加工功率""""""
+    @property
+    def p_rjm(self):
+        return randint(10, 200)
+    """"""机器的待机功率""""""
+    @property
+    def p_m_idle(self):
+        return randint(1, 9)
+
+    def process_information(self):
+        """"""生成实例文件数据，并存入csv文件""""""
+        # 机器、工件信息
+        task_r_dict = {r: tuple(j for j in range(self.J_r)) for r in self.kind_tuple}  # [r]对应工序元组
+        kind_task_tuple = tuple((r, j) for r in self.kind_tuple for j in task_r_dict[r])  # 工序类型元组
+        machine_rj_dict = {(r, j): tuple(np.random.choice(self.machine_tuple, randint(1, self.machine_count), replace=False)) for (r, j) in kind_task_tuple}  # (r, j) 可选机器元组
+        time_rjm_dict = {(r, j): {m: self.t_rjm for m in machine_rj_dict[(r, j)]} for (r, j) in kind_task_tuple}  # [(r, j)][m]加工时间
+        kind_task_m_dict = {m: tuple((r, j) for (r, j) in kind_task_tuple if m in machine_rj_dict[(r, j)]) for m in self.machine_tuple}
+        time_mrj_dict = {m: {(r, j): time_rjm_dict[(r, j)][m] for (r, j) in kind_task_m_dict[m]} for m in self.machine_tuple}
+        # 各工序加工时间均值
+        time_rj_dict = {(r, j): sum([time_rjm_dict[(r, j)][m] for m in machine_rj_dict[(r, j)]]) / len(machine_rj_dict[(r, j)]) for (r, j) in kind_task_tuple}
+        # 订单信息
+        count_sr_dict = {s: tuple(self.N_sr for r in range(len(task_r_dict))) for s in self.order_tuple}  # [s][r]工件类型的数量
+        time_gap_s_dict = {s: sum([time_rj_dict[(r, j)]*count_sr_dict[s][r] for (r, j) in kind_task_tuple]) *
+                              self.DDT/(self.machine_count*2) for s in self.order_tuple}  # 各订单交期-到达时间差值
+        time_interval_list = [self.t_si for s in range(self.order_count - 1)]  # 各订单的间隔时间
+        time_interval_list.insert(0, 0)
+        time_arrive_s_dict = {s: int(sum(time_interval_list[:s + 1])) for s in self.order_tuple}  # 各订单的到达时间
+        time_delivery_list = [time_arrive_s_dict[s] + time_gap_s_dict[s] for s in self.order_tuple]
+        time_delivery_list.sort()
+        time_delivery_s_dict = {s: int(time_delivery_list[s]) for s in self.order_tuple}  # 各订单的交期时间
+        # 生成加工功率相关信息
+        power_mrj_dict = {m: {rj: self.p_rjm for rj in kind_task_m_dict[m]} for m in self.machine_tuple}
+        power_m_dict = {m: self.p_m_idle for m in self.machine_tuple}
+
+        return task_r_dict, machine_rj_dict, kind_task_m_dict, time_rjm_dict, count_sr_dict, time_arrive_s_dict, \
+               time_delivery_s_dict, kind_task_tuple, time_mrj_dict, time_rj_dict, power_mrj_dict, power_m_dict
+
+    def write_file(self):
+        """"""写入csv文件""""""
+        os.makedirs(os.path.join('../data/DA3C', self.file_name), exist_ok=True)  # 新建实例文件夹
+        file_csv = {'based_data.csv': ['kind_count', 'machine_count', 'order_count'],
+                    'process_data.csv': ['kind', 'task', 'machine_selectable', 'process_time'],
+                    'order_data.csv': ['order', 'time_arrive', 'time_delivery', 'kind_number']}
+
+        for csv_name, header in file_csv.items():
+            data_file = os.path.join('../data/DA3C', self.file_name, csv_name)
+            with open(data_file, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(header)
+                rows = []  # 初始化写入数据
+                if csv_name == 'based_data.csv':
+                    rows.append([self.kind_count, self.machine_count, self.order_count])
+                elif csv_name == 'process_data.csv':
+                    for r in self.kind_tuple:
+                        for j in self.task_r_dict[r]:
+                            time_machine_tuple = tuple(self.time_rjm_dict[(r, j)][m] for m in self.machine_rj_dict[(r, j)])
+                            rows.append([r, j, self.machine_rj_dict[(r, j)], time_machine_tuple])
+                else:
+                    for s in self.order_tuple:
+                        rows.append([s, self.time_arrive_s_dict[s], self.time_delivery_s_dict[s], self.count_sr_dict[s]])
+                writer.writerows(rows)
+        print(""写入完成"")
+
+
+if __name__ == '__main__':
+    # 初始化算例集参数
+    DDT_list = [0.5, 1.0, 1.5]
+    machine_count_list = [10, 15, 20]
+    order_count_list = [2, 4, 6]
+    file_name_list = []
+    # 生成各实例文件
+    for DDT in DDT_list:
+        for M in machine_count_list:
+            for S in order_count_list:
+                instance_object = Instance(DDT, M, S)
+                instance_object.write_file()
+                file_name_list.append(instance_object.file_name)
+    print(file_name_list)"
+"File:environments/class_MODFJSP.py","class_MODFJSP.py","environments/class_MODFJSP.py","""""""
+柔性作业车间调度基础类定义
+""""""
+import copy
+import random, math
+import time
+import numpy as np
+from environments.Instance_generate import Instance
+from docplex.mp.model import Model
+from environments.MO_DFJSP_instance_read import Data
+from utilities.Utility_Class import MyError
+
+
+class Order():
+    """"""订单对象""""""
+    def __init__(self, s, arrive, delivery, count_kind):
+        # 基本属性
+        self.order_node = s
+        self.time_arrive = arrive  # 到达时间
+        self.time_delivery = delivery  # 交期时间
+        self.count_kind = count_kind  # 包含的各种工件的数量
+
+
+class Kind():
+    """"""工件类型类""""""
+    def __init__(self, r):
+        self.kind = r
+        self.job_arrive_list = []  # 已经到达的工件对象列表
+        self.job_unprocessed_list = []  # 未加工完成的工件对象列表
+
+    """"""该类型工件已到达工件数:下一阶段的工件n起始编号""""""
+    @property
+    def number_start(self):
+        return len(self.job_arrive_list)
+
+
+class Tasks(Kind):
+    """"""定义工序o_rj类""""""
+    def __init__(self, r, j):
+        Kind.__init__(self, r)  # 调用父类的构函
+        # 基本属性
+        self.task = j  # 所属工序
+        self.task_remain = None  # 后续工序数
+        self.machine_tuple = None  # 可选加工机器编号
+        self.time_remain = None  # 后续剩余处理时间
+        # 附加属性
+        self.job_now_list = []  # 处于该工序段的工件对象列表
+        self.job_unprocessed_list = []  # 该工序段未被加工的工件对象列表
+        self.task_unprocessed_list = []  # 该工序段还未加工的工序对象列表
+        self.task_processed_list = []  # 该工序段已加工的工序对象列表
+        # 流体相关属性
+        self.fluid_process_rate_m_dict = {}  # 流体中被各机器加工的速率
+        self.fluid_machine_list = []  # 流体模型解可选加工机器
+        self.fluid_time_sum = None  # 流体模型中该工序的加工时间
+        self.fluid_rate_sum = None  # 流体模型中加工该工序的速率
+        self.fluid_number = None  # 处于该工序段的流体数量
+        self.fluid_unprocessed_number = None  # 未被加工的流体数
+        self.fluid_unprocessed_number_start = None  # 订单到达时刻未被加工的流体数
+
+    # 计算属性
+    """"""工序类型最早可加工时间""""""
+    @property
+    def min_available_time(self):
+        if self.task != 0:  # 若不为首工序
+            return min(job_object.task_list[-1].time_end for job_object in self.job_now_list)
+        else:
+            return min(job_object.time_arrive for job_object in self.job_now_list)
+    """"""流体gap_rj/Q的比值""""""
+    @property
+    def gap_rate(self):
+        return (len(self.task_unprocessed_list) - self.fluid_unprocessed_number)/self.fluid_unprocessed_number_start
+    """"""流体gap_rj值""""""
+    @property
+    def gap(self):
+        return len(self.task_unprocessed_list) - self.fluid_unprocessed_number
+    """"""o_rj完成率""""""
+    @property
+    def finish_rate(self):
+        return len(self.task_processed_list)/(len(self.task_unprocessed_list) + len(self.task_processed_list))
+    """"""工序rj阶段工件的交期最小值""""""
+    @property
+    def due_date_min(self):
+        if len(self.job_now_list) > 0:
+            min_due_date = min(job_object.due_date for job_object in self.job_now_list)
+        else:
+            raise MyError(""当前工序rj阶段不存在工件"")
+        return min_due_date
+
+
+class Job(Kind):
+    """"""工件类""""""
+    def __init__(self, r, n):
+        Kind.__init__(self, r)  # 调用父类的构函
+        # 基本属性
+        self.number = n  # 该工件类型的第几个工件
+        self.time_arrive = None  # 该工件的到达世时间
+        # 附加属性
+        self.due_date = None  # 该工件的交期
+        self.task_list = []  # 分配机器的工序对象列表
+        self.task_unprocessed_list = []  # 未分配机器的工序对象列表
+
+
+class Task(Tasks, Job):
+    """"""工序类""""""
+    def __init__(self, r, n, j):
+        Tasks.__init__(self, r, j)  # 调用父类的构函
+        Job.__init__(self, r, n)  # 调用父类构函
+        # 附加属性
+        self.machine = None  # 选择的机器
+        self.time_end = None  # 加工结束时间
+        self.time_begin = None  # 加工开始时间
+
+    """"""加工耗时""""""
+    @property
+    def time_cost(self):
+        return self.time_end - self.time_begin
+
+
+class Machine():
+    """"""机器类""""""
+    def __init__(self, m):
+        # 基本属性
+        self.machine_node = m  # 机器编号
+        self.kind_task_tuple = None  # 可选加工工序类型元组
+        # 附加属性
+        self.state = 0  # 机器状态
+        self.time_end = 0  # 机器完工时间
+        self.task_list = []  # 机器已加工工序对象列表
+        self.job_object = None  # 机器正在处理的工件对象
+        self.unprocessed_rj_dict = {}  # 未被m加工的各工序类型的工序总数/随着加工过程动态更新
+        # 流体附加属性
+        self.fluid_kind_task_list = []  # 可选加工工序类型
+        self.time_ratio_rj_dict = {}  # 流体解中分配给各工序类型的时间比例
+        self.fluid_process_rate_rj_dict = {}  # 流体解中加工各工序类型的速率
+        self.fluid_unprocessed_rj_dict = {}  # 未被机器m加工的各工序类型流体总数
+        self.fluid_unprocessed_rj_arrival_dict = {}  # 订单到达时刻未被m加工的各工序类型流体数
+
+    """"""机器开工时间""""""
+    @property
+    def time_start(self):
+        if len(self.task_list) > 0:
+            return self.task_list[0].time_begin
+        else:
+            return None
+    """"""机器利用率""""""
+    @property
+    def utilize_rate(self):
+        return sum(task.time_cost for task in self.task_list)/max(1e-08, self.time_end)
+    """"""计算gap_mrj值""""""
+    @property
+    def gap_rj_dict(self):
+        gap_rj_dict = {}
+        for (r, j) in self.kind_task_tuple:
+            gap_rj_dict[(r, j)] = self.unprocessed_rj_dict[(r, j)] - self.fluid_unprocessed_rj_dict[(r, j)]
+        return gap_rj_dict
+    """"""计算gap_m_rj的均值""""""
+    @property
+    def gap_ave(self):
+        return sum(self.gap_rj_dict[(r, j)] for (r, j) in self.kind_task_tuple)/len(self.kind_task_tuple)
+
+
+class FJSP(Instance, Data):
+    """"""柔性作业车间调度类""""""
+    def __init__(self, use_instance=True, **kwargs):
+        if use_instance:
+            Instance.__init__(self, **kwargs)
+        else:
+            Data.__init__(self, **kwargs)
+        # 实例化工件类型、工件、工序类型、工序和机器对象字典
+        self.kind_task_dict = {(r, j): Tasks(r, j) for r in self.kind_tuple for j in self.task_r_dict[r]}  # 工序类型对象字典
+        self.order_dict = {s: Order(s, self.time_arrive_s_dict[s], self.time_delivery_s_dict[s], self.count_sr_dict[s]) for s in self.order_tuple}  # 对象订单字典
+        self.kind_dict = {r: Kind(r) for r in self.kind_tuple}  # 工件类型对象字典
+        self.machine_dict = {m: Machine(m) for m in self.machine_tuple}  # 机器对象字典
+        self.task_dict = {}  # (r,n,j) 工序对象字典 订单到达更新
+        self.job_dict = {}  # (r,n)  # 工件对象字典
+        self.process_rate_m_rj_dict = {m: {(r, j): 1 / self.time_mrj_dict[m][(r, j)]
+                                           for (r, j) in self.kind_task_m_dict[m]} for m in self.machine_tuple}  # 机器加工流体速率
+        self.energy_mrj_dict = {m: {(r, j): self.power_mrj_dict[m][(r, j)] * self.time_mrj_dict[m][(r, j)]
+                                    for (r, j) in self.kind_task_m_dict[m]} for m in self.machine_tuple}  # 工序在机器上的能耗
+
+    def reset_parameter(self):
+        """"""初始化各字典和参数""""""
+        for r, kind in self.kind_dict.items():
+            kind.job_arrive_list = []  # 已经到达的工件对象列表
+            kind.job_unprocessed_list = []  # 未分配机器的工件对象列表
+        for (r, j), kind_task_object in self.kind_task_dict.items():
+            kind_task_object.machine_tuple = self.machine_rj_dict[(r, j)]  # 可选加工机器编号元组
+            kind_task_object.time_remain = sum(self.time_rj_dict[(r, jj)] for jj in self.task_r_dict[r][j:])  # 后续剩余处理时间
+            kind_task_object.job_now_list = []  # 处于该工序段的工件对象列表
+            kind_task_object.job_unprocessed_list = []  # 该工序段未被加工的工件对象列表
+            kind_task_object.task_unprocessed_list = []  # 该工序段还未加工的工序对象列表
+            kind_task_object.task_processed_list = []  # 该工序段已加工的工序对象列表
+        for m, machine_object in self.machine_dict.items():
+            machine_object.kind_task_tuple = self.kind_task_m_dict[m]  # 可选加工工序类型元组
+            machine_object.machine_state = 0  # 机器状态
+            machine_object.time_end = 0  # 机器完工时间
+            machine_object.task_list = []  # 机器已加工工序对象列表
+            machine_object.job_object = None
+
+    def reset_fluid_parameter(self):
+        """"""初始化流体属性参数""""""
+        for (r, j), kind_task_object in self.kind_task_dict.items():
+            kind_task_object.fluid_machine_list = []  # 流体模型中可选加工机器
+            kind_task_object.fluid_process_rate_m_dict = {}  # 被各机器加工的速率
+        for m, machine_object in self.machine_dict.items():
+            machine_object.fluid_kind_task_list = []  # 流体解中可选加工工序类型列表
+            machine_object.time_ratio_rj_dict = {}  # 流体解中分配给各工序类型的时间比例
+            machine_object.fluid_process_rate_rj_dict = {}  # 流体解中加工各工序类型的速率
+            machine_object.unprocessed_rj_dict = {}  # 未被m加工的工序o_rj的总数 (r,j)
+            machine_object.fluid_unprocessed_rj_dict = {}  # 流体解中未被机器m加工的各工序类型总数
+            machine_object.fluid_unprocessed_rj_arrival_dict = {}  # 订单到达时刻未被m加工的各工序类型数量
+
+    def reset_object_add(self, order_object):
+        """"""
+        :param order_object: 新到达的订单对象
+        :return: 添加工序对象和机器对象+更新流体模型和属性
+        """"""
+        # 更新工件类型字典、工序类型对象字典、工序对象字典、工件对象字典、
+        for r in self.kind_tuple:
+            n_start = self.kind_dict[r].number_start
+            n_end = n_start + order_object.count_kind[r]
+            for n in range(n_start, n_end):
+                job_object = Job(r, n)  # 工件对象
+                job_object.due_date = order_object.time_delivery  # 工件交期
+                job_object.time_arrive = order_object.time_arrive  # 工件到达时间
+                job_object.task_list = []
+                job_object.task_unprocessed_list = []
+                self.kind_dict[r].job_arrive_list.append(job_object)
+                self.kind_dict[r].job_unprocessed_list.append(job_object)
+                self.job_dict[(r, n)] = job_object  # 加入工件字典
+                self.kind_task_dict[(r, 0)].job_now_list.append(job_object)
+                for j in self.task_r_dict[r]:
+                    task_object = Task(r, n, j)  # 工序对象
+                    job_object.task_unprocessed_list.append(task_object)  # 加入工序未处理工序对象字典
+                    task_object.due_date = self.job_dict[(r, n)].due_date  # 工序交期
+                    self.kind_task_dict[(r, j)].job_unprocessed_list.append(job_object)
+                    self.kind_task_dict[(r, j)].task_unprocessed_list.append(task_object)
+                    self.task_dict[(r, n, j)] = task_object  # 加入工序字典
+        # 初始化流体属性
+        for (r, j), ki
+... [truncated]"
+"File:agents/Base_Agent.py","Base_Agent.py","agents/Base_Agent.py","""""""基础智能体类""""""
+import random
+import numpy as np
+import torch
+import time
+from torch.optim import optimizer
+
+
+class Base_Agent():
+    def __init__(self):
+        self.action_size = None  # 动作维度
+        self.state_size = None  # 状态维度
+        self.episode_number = 0  # 周期数
+        self.device = torch.device(""cuda:0"" if torch.cuda.is_available() else ""cpu"")  # 设备选择
+        print(""选择的设备："", self.device)
+        self.turn_off_exploration = False  # 探索控制
+        # 通用环境相关参数和周期参数定义
+        self.state = None
+        self.next_state = None
+        self.action = None
+        self.reward = None
+        self.done = False
+
+        self.episode_states = []
+        self.episode_rewards = []
+        self.episode_actions = []
+        self.episode_next_states = []
+        self.episode_dones = []
+
+    def step(self):
+        """"""
+        在对应智能体中重写step方法
+        """"""
+        raise ValueError(""step方法需要在对应智能体中重写"")
+
+    def get_state_size(self):
+        """"""
+        环境状态维度-用于构建神经网络
+        """"""
+        return ValueError(""该方法需要在对应智能体中重写"")
+
+    def reset_game(self):
+        """"""重置环境""""""
+        self.state = None
+        self.next_state = None
+        self.action = None
+        self.reward = None
+        self.done = False
+        self.episode_states = []
+        self.episode_rewards = []
+        self.episode_actions = []
+        self.episode_next_states = []
+        self.episode_dones = []
+
+    def track_episodes_data(self):
+        """"""保存最近几集的数据""""""
+        self.episode_states.append(self.state)
+        self.episode_actions.append(self.action)
+        self.episode_rewards.append(self.reward)
+        self.episode_next_states.append(self.next_state)
+        self.episode_dones.append(self.done)
+
+    def enough_experiences_to_learn_from(self, memory, batch_size):
+        """"""布尔值表示内存缓冲区中是否有足够的经验可供学习""""""
+        return len(memory) > batch_size
+
+    def save_experience(self, memory=None, experience=None):
+        """"""将最近的经验保存到内存缓冲区""""""
+        if experience is None:
+            experience = self.state, self.action, self.reward, self.next_state, self.done
+        memory.add_experience(*experience)
+
+    def take_optimisation_step(self, optimizer, network, loss, clipping_norm=None, retain_graph=False):
+        """"""通过计算给定损失的梯度然后更新参数来进行优化步骤""""""
+        if not isinstance(network, list):
+            network = [network]
+        optimizer.zero_grad()  # 重置梯度为 0
+        loss.backward(retain_graph=retain_graph)  # 计算梯度
+        if clipping_norm is not None:
+            for net in network:
+                torch.nn.utils.clip_grad_norm_(net.parameters(), clipping_norm)  # 裁剪梯度以帮助稳定训练
+        optimizer.step()  # 更新梯度
+
+    def soft_update_of_target_network(self, local_model, target_model, tau=0.005):
+        """"""软更新目标网络""""""
+        for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
+            target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)
+
+    def turn_on_any_epsilon_greedy_exploration(self):
+        """"""开启所有贪心勘探策略的勘探""""""
+        print(""Turning on epsilon greedy exploration"")
+        self.turn_off_exploration = False
+
+    def turn_off_any_epsilon_greedy_exploration(self):
+        """"""关闭所有贪心勘探策略下的勘探""""""
+        print(""Turning off epsilon greedy exploration"")
+        self.turn_off_exploration = True
+
+    def freeze_all_but_output_layers(self, network):
+        """"""冻结网络除输出层外的所有层""""""
+        print(""Freezing hidden layers"")
+        for param in network.named_parameters():
+            param_name = param[0]
+            assert ""hidden"" in param_name or ""output"" in param_name or ""embedding"" in param_name, \
+                ""Name {} of network layers not understood"".format(param_name)
+            if ""output"" not in param_name:
+                param[1].requires_grad = False
+
+    def unfreeze_all_layers(self, network):
+        """"""解冻网络的所有层""""""
+        print(""Unfreezing all layers"")
+        for param in network.parameters():
+            param.requires_grad = True
+
+    @staticmethod
+    def move_gradients_one_model_to_another(from_model, to_model, set_from_gradients_to_zero=False):
+        """"""从from_model复制梯度到to_model""""""
+        for from_model, to_model in zip(from_model.parameters(), to_model.parameters()):
+            to_model._grad = from_model.grad.clone()
+            if set_from_gradients_to_zero:
+                from_model._grad = None
+
+    @staticmethod
+    def copy_model_over(from_model, to_model):
+        """"""将模型参数从from_model复制到to_model""""""
+        to_model.load_state_dict(from_model.state_dict())
+
+    @staticmethod
+    def copy_model_over_dict(from_model, to_model):
+        """"""将模型参数从from_model复制到to_model""""""
+        # 复制模型参数
+        to_model_state_dict = to_model.state_dict()
+        from_model_state_dict = from_model.state_dict()
+        # 更新to_model的参数为from_model的参数
+        to_model_state_dict.update(from_model_state_dict)
+        # 加载更新后的参数到to_model
+        to_model.load_state_dict(to_model_state_dict)
+
+"
+"File:exploration_strategies/OU_Noise_Exploration.py","OU_Noise_Exploration.py","exploration_strategies/OU_Noise_Exploration.py","from utilities.OU_Noise import OU_Noise
+from exploration_strategies.Base_Exploration_Strategy import Base_Exploration_Strategy
+
+
+class OU_Noise_Exploration(Base_Exploration_Strategy):
+    """"""Ornstein-Uhlenbeck噪声过程探索策略""""""
+    def __init__(self, config, algorithm):
+        super().__init__(config)
+        self.noise = OU_Noise(self.config.hyper_parameters[algorithm][""action_size""], self.config.seed, self.config.hyper_parameters[algorithm][""mu""],
+                              self.config.hyper_parameters[algorithm][""theta""], self.config.hyper_parameters[algorithm][""sigma""])
+
+    def perturb_action_for_exploration_purposes(self, action_info):
+        """"""干扰代理的行动以鼓励探索""""""
+        action = action_info[""action""]
+        action += self.noise.sample()
+        return action
+
+    def add_exploration_rewards(self, reward_info):
+        """"""鼓励探索的内在奖励""""""
+        raise ValueError(""Must be implemented"")
+
+    def reset(self):
+        """"""重置噪声进程""""""
+        self.noise.reset()"
+"File:exploration_strategies/Gaussian_Exploration.py","Gaussian_Exploration.py","exploration_strategies/Gaussian_Exploration.py","from exploration_strategies.Base_Exploration_Strategy import Base_Exploration_Strategy
+import torch
+from torch.distributions.normal import Normal
+
+
+class Gaussian_Exploration(Base_Exploration_Strategy):
+    """"""高斯噪声探测策略""""""
+    def __init__(self, config, algorithm, device=None):
+        super().__init__(config)
+        self.device = device
+        self.action_noise_std = self.config.hyper_parameters[algorithm][""action_noise_std""]
+        self.action_noise_distribution = Normal(torch.Tensor([0.0]), torch.Tensor([self.action_noise_std]))
+        self.action_noise_clipping_range = self.config.hyper_parameters[algorithm][""action_noise_clipping_range""]
+
+    def perturb_action_for_exploration_purposes(self, action_info):
+        """"""干扰代理的行动以鼓励探索""""""
+        action = action_info[""action""]
+        action_noise = self.action_noise_distribution.sample(sample_shape=action.shape)
+        action_noise = action_noise.squeeze(-1)
+        clipped_action_noise = torch.clamp(action_noise, min=-self.action_noise_clipping_range, max=self.action_noise_clipping_range)
+        action += clipped_action_noise.to(self.device)
+        return action
+
+    def add_exploration_rewards(self, reward_info):
+        """"""鼓励探索的内在奖励""""""
+        raise ValueError(""Must be implemented"")
+
+    def reset(self):
+        """"""Resets the noise process""""""
+        pass
+
+"
+"File:exploration_strategies/Epsilon_Greedy_Exploration.py","Epsilon_Greedy_Exploration.py","exploration_strategies/Epsilon_Greedy_Exploration.py","from exploration_strategies.Base_Exploration_Strategy import Base_Exploration_Strategy
+import numpy as np
+import random
+import torch
+
+
+class Epsilon_Greedy_Exploration(Base_Exploration_Strategy):
+    """"""Implements an epsilon greedy exploration strategy""""""
+    def __init__(self, hyper_parameters):
+        Base_Exploration_Strategy.__init__(self, hyper_parameters)
+        self.hyper_parameters = hyper_parameters
+        self.notified_that_exploration_turned_off = False
+        if ""exploration_cycle_episodes_length"" in self.hyper_parameters.keys():
+            print(""Using a cyclical exploration strategy"")
+            self.exploration_cycle_episodes_length = self.hyper_parameters[""exploration_cycle_episodes_length""]
+        else:
+            self.exploration_cycle_episodes_length = None
+
+        if ""random_episodes_to_run"" in self.hyper_parameters.keys():
+            self.random_episodes_to_run = self.hyper_parameters[""random_episodes_to_run""]
+            print(""Running {} random episodes"".format(self.random_episodes_to_run))
+        else:
+            self.random_episodes_to_run = 0
+
+    def perturb_action_for_exploration_purposes(self, action_info):
+        """"""
+        Perturbs the action of the agent to encourage exploration
+        """"""
+        action_values = action_info[""action_values""]
+        turn_off_exploration = action_info[""turn_off_exploration""]
+        episode_number = action_info[""episode_number""]
+        if turn_off_exploration and not self.notified_that_exploration_turned_off:
+            print("" "")
+            print(""Exploration has been turned OFF"")
+            print("" "")
+            self.notified_that_exploration_turned_off = True
+        epsilon = self.get_updated_epsilon_exploration(action_info)
+
+        if (random.random() > epsilon or turn_off_exploration) and (episode_number >= self.random_episodes_to_run):
+            return torch.argmax(action_values).item()  # 返回最大Q值动作
+        return np.random.randint(0, action_values.shape[1])  # 返回任意动作
+
+    def get_updated_epsilon_exploration(self, action_info, epsilon=1.0):
+        """"""
+        Gets the probability that we just pick a random action. This probability decays the more episodes we have seen
+        """"""
+        episode_number = action_info[""episode_number""]
+        epsilon_decay_denominator = self.hyper_parameters[""epsilon_decay_rate_denominator""]
+
+        if self.exploration_cycle_episodes_length is None:
+            epsilon = epsilon / (1.0 + (episode_number / epsilon_decay_denominator))
+        else:
+            epsilon = self.calculate_epsilon_with_cyclical_strategy(episode_number)
+        return epsilon
+
+    def calculate_epsilon_with_cyclical_strategy(self, episode_number):
+        """"""
+        Calculates epsilon according to a cyclical strategy
+        """"""
+        max_epsilon = 0.5
+        min_epsilon = 0.001
+        increment = (max_epsilon - min_epsilon) / float(self.exploration_cycle_episodes_length / 2)
+        cycle = [ix for ix in range(int(self.exploration_cycle_episodes_length / 2))] + [ix for ix in range(
+            int(self.exploration_cycle_episodes_length / 2), 0, -1)]
+        cycle_ix = episode_number % self.exploration_cycle_episodes_length
+        epsilon = max_epsilon - cycle[cycle_ix] * increment
+        return epsilon
+
+    def add_exploration_rewards(self, reward_info):
+        """"""
+        Actions intrinsic rewards to encourage exploration
+        """"""
+        return reward_info[""reward""]
+
+    def reset(self):
+        """"""Resets the noise process""""""
+        pass
+"
+"File:exploration_strategies/Base_Exploration_Strategy.py","Base_Exploration_Strategy.py","exploration_strategies/Base_Exploration_Strategy.py","
+class Base_Exploration_Strategy(object):
+    """"""
+    智能体探索策略的基本抽象类。
+    每个探索策略都必须继承这个类，并实现方法摄动_action_for_exploration_purposes和add_exploration_rewards
+    """"""
+    def __init__(self, config):
+        self.config = config
+
+    def perturb_action_for_exploration_purposes(self, action_info):
+        """"""干扰代理的行动以鼓励探索""""""
+        raise ValueError(""Must be implemented"")
+
+    def add_exploration_rewards(self, reward_info):
+        """"""鼓励探索的内在奖励""""""
+        raise ValueError(""Must be implemented"")
+
+    def reset(self):
+        """"""重置噪声进程""""""
+        raise ValueError(""Must be implemented"")"
+"File:utilities/data_structures/Replay_Buffer.py","Replay_Buffer.py","utilities/data_structures/Replay_Buffer.py","from collections import namedtuple, deque
+import random
+import torch
+import numpy as np
+
+
+class Replay_Buffer():
+    """"""重放缓存区类""""""
+    def __init__(self, buffer_size, batch_size, device=None):
+
+        self.memory = deque(maxlen=buffer_size)
+        self.batch_size = batch_size
+        self.experience = namedtuple(""Experience"", field_names=[""state"", ""action"", ""reward"", ""next_state"", ""done""])
+
+        if device:
+            self.device = torch.device(device)
+        else:
+            self.device = torch.device(""cuda:0"" if torch.cuda.is_available() else ""cpu"")
+
+    def add_experience(self, states, actions, rewards, next_states, dones):
+        """"""将经验添加到重放缓冲区中""""""
+        if type(dones) == list:
+            assert type(dones[0]) != list, ""A done shouldn't be a list""
+            experiences = [self.experience(state, action, reward, next_state, done)
+                           for state, action, reward, next_state, done in zip(states, actions, rewards, next_states, dones)]
+            self.memory.extend(experiences)
+        else:
+            experience = self.experience(states, actions, rewards, next_states, dones)
+            self.memory.append(experience)
+
+    def sample(self, num_experiences=None, separate_out_data_types=True):
+        """"""从重放缓冲中抽取经验的随机样本""""""
+        experiences = self.pick_experiences(num_experiences)
+        if separate_out_data_types:
+            states, actions, rewards, next_states, dones = self.separate_out_data_types(experiences)
+            return states, actions, rewards, next_states, dones
+        else:
+            return experiences
+
+    def separate_out_data_types(self, experiences):
+        """"""将采样经验转换为PyTorch神经网络的正确格式""""""
+        states = torch.from_numpy(np.vstack([e.state for e in experiences if e is not None])).float().to(self.device)
+        actions = torch.from_numpy(np.vstack([e.action for e in experiences if e is not None])).float().to(self.device)
+        rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float().to(self.device)
+        next_states = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float().to(self.device)
+        dones = torch.from_numpy(np.vstack([int(e.done) for e in experiences if e is not None])).float().to(self.device)
+        
+        return states, actions, rewards, next_states, dones
+
+    def pick_experiences(self, num_experiences=None):
+        """"""随机采样batch_size条经验""""""
+        if num_experiences is not None:
+            batch_size = num_experiences
+        else:
+            batch_size = self.batch_size
+        return random.sample(self.memory, k=batch_size)  # 随机选取batch_size个经验
+
+    def __len__(self):
+        return len(self.memory)
+"
+"File:utilities/data_structures/Config.py","Config.py","utilities/data_structures/Config.py","import random
+
+
+class Config():
+    """"""对象来保存代理/游戏的配置要求""""""
+    def __init__(self):
+        self.seed = random.randint(1, 100)  # 随机种子
+        self.environment_test = None  # 环境名称
+        self.requirements_to_solve_game = None  # 配置需求
+        self.num_episodes_to_run = None  # 运行周期
+        self.file_to_save_data_results = None  # 保存结果数据的位置
+        self.file_to_save_results_graph = None  # 保存结果图的位置
+        self.use_GPU = None  # 是否使用GPU
+        self.overwrite_existing_results_file = None  # 是否覆盖存在的结果文件
+        self.save_model = True  # 是否保存模型
+        self.hyper_parameters = self.hyper_parameter()  # 算法超参数
+
+    def hyper_parameter(self):
+        """"""算法超参数""""""
+        parameters = {
+            ""PPO"": {
+                ""policy_update_round"": 10,
+                ""num_episodes_to_run"": 2000,
+                ""tau"": 0.005,
+                ""learning_rate"": 0.003,
+                ""discount_rate"": 1.0,
+                ""buffer_size"": 10000,
+                ""episodes_per_learning_round"": 10,
+                ""learning_iterations_per_round"": 10,
+                ""learning_iterations_per_round_actor"": 10,
+                ""learning_iterations_per_round_critic"": 10,
+                ""clip_epsilon"": 0.2,
+                ""mu"": 0,
+                ""theta"": 0.15,
+                ""sigma"": 0.2,
+                ""epsilon_decay_rate_denominator"": 10,
+                ""clip_rewards"": False,
+                ""normalized_rewards"": True,
+                ""standardized_rewards"": True,
+                ""gradient_clipping_norm"": 10.0
+            },
+            ""A3C"": {
+                ""learning_rate"": 0.0005,
+                ""discount_rate"": 0.99,
+                ""num_episodes_to_run"": 1200,
+                ""gradient_clipping_norm"": 1.0,
+                ""clip_rewards"": True,
+                ""normalise_rewards"": True,
+                ""epsilon_decay_rate_denominator"": 1.0,
+                ""exploration_worker_difference"": 2.0
+            },
+            ""DA3C"": {
+                ""learning_rate"": 0.003,
+                ""discount_rate"": 0.99,
+                ""num_episodes_to_run"": 1200,
+                ""gradient_clipping_norm"": 1.0,
+                ""clip_rewards"": True,
+                ""normalise_rewards"": True,
+                ""epsilon_decay_rate_denominator"": 1.0,
+                ""exploration_worker_difference"": 2.0
+            },
+            ""MP_PPO"": {
+                ""actor_number"": 5,
+                ""policy_update_round"": 10,
+                ""num_episodes_to_run"": 1000,
+                ""tau"": 0.005,
+                ""learning_rate"": 0.0003,
+                ""discount_rate"": 0.99,
+                ""buffer_size"": 10000,
+                ""batch_size"": 256,
+                ""episodes_per_learning_round"": 10,
+                ""learning_iterations_per_round"": 10,
+                ""learning_iterations_per_round_actor"": 10,
+                ""learning_iterations_per_round_critic"": 10,
+                ""clip_epsilon"": 0.2,
+                ""mu"": 0,
+                ""theta"": 0.15,
+                ""sigma"": 0.2,
+                ""epsilon_decay_rate_denominator"": 10,
+                ""clip_rewards"": False,
+                ""normalized_rewards"": True,
+                ""standardized_rewards"": True,
+                ""gradient_clipping_norm"": 1.0
+            },
+            ""HMP_SAC"": {
+                ""num_episodes_to_run"": 2000,
+                ""learning_rate"": 0.0003,
+                ""discount_rate"": 0.99,
+                ""buffer_size"": 10000,
+                ""batch_size"": 256,
+                ""gradient_clipping_norm"": 1.0,
+                ""min_steps_before_learning"": 10000,
+                ""tau"": 0.005,
+                ""learning_updates_per_learning_session"": 10,
+                ""update_every_n_steps"": 1000,
+                ""add_extra_noise"": False,
+                ""do_evaluation_iterations"": False,
+                ""entropy_term_weight"": 0,
+                ""normalized_rewards"": True,
+                ""standardized_rewards"": True,
+                ""automatically_tune_entropy_hyper_parameter"": True
+            },
+            ""DDQN"": {
+                ""num_episodes_to_run"": 1000,
+                ""gradient_clipping_norm"": 5.0,
+                ""tau"": 0.005,
+                ""buffer_size"": 100000,
+                ""batch_size"": 1280,
+                ""learning_iterations"": 1,
+                ""update_every_n_steps"": 10,
+                ""epsilon_decay_rate_denominator"": 10,
+                ""learning_rate"": 0.000001,
+                ""discount_rate"": 1
+            },
+            ""MPTD3"": {
+                ""learning_rate"": 0.0003,
+                ""discount_rate"": 0.99,
+                ""gradient_clipping_norm"": 5.0,
+                ""tau"": 0.005,
+                ""actor_number"": 5,
+                ""action_size"": 1,
+                ""state_size"": 24,
+                ""num_episodes_to_run"": 2000,
+                ""buffer_size"": 10000,
+                ""batch_size"": 256,
+                ""buffer_size_critic"": 50000,
+                ""batch_size_critic"": 1280,
+                ""mu"": 0,
+                ""theta"": 0.15,
+                ""sigma"": 0.2,
+                ""action_noise_std"": 0.2,
+                ""action_noise_clipping_range"": 0.5,
+                ""update_every_n_steps"": 5,
+                ""learning_updates_per_learning_session"": 5,
+                ""delay_update"": 20
+            }
+        }
+
+        return parameters
+
+
+
+"
+"File:results/HMPSAC_T/actor_task_model.path","actor_task_model.path","results/HMPSAC_T/actor_task_model.path","[Binary file - content not stored]"
+"File:results/HMPSAC_T/actor_machine_model.path","actor_machine_model.path","results/HMPSAC_T/actor_machine_model.path","[Binary file - content not stored]"
+"File:results/HMPSAC_E/actor_task_model.path","actor_task_model.path","results/HMPSAC_E/actor_task_model.path","[Binary file - content not stored]"
+"File:results/HMPSAC_E/actor_machine_model.path","actor_machine_model.path","results/HMPSAC_E/actor_machine_model.path","[Binary file - content not stored]"
+"File:results/HMPSAC/control_policy_network.path","control_policy_network.path","results/HMPSAC/control_policy_network.path","[Binary file - content not stored]"
+"File:agents/HMPSAC/SAC.py","SAC.py","agents/HMPSAC/SAC.py","""""""
+上层控制策略网络训练算法
+""""""
+import random
+import torch
+from torch.optim import Adam
+import torch.nn.functional as F
+from torch import nn
+import numpy as np
+from agents.Base_Agent import Base_Agent
+from utilities.data_structures.Replay_Buffer import Replay_Buffer
+from utilities.Utility_Functions import create_actor_distribution
+from utilities.data_structures.Config import Config
+from utilities.OU_Noise import OU_Noise
+from environments.MO_DFJSP import MO_DFJSP_Environment
+from visdom import Visdom
+from utilities.Utility_Class import AddData
+
+# 训练结果数据保存位置
+agent_version = '_v3.1'
+path_file_name = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/results/HMPSAC/training' + agent_version + '.csv'
+add_data_object = AddData(path_file_name)
+add_data_object.add_data(['epoch', 'makespan', 'tardiness', 'energy'])
+# 监控训练过程
+vis = Visdom()
+window_1 = 'completion_time' + agent_version
+title_1 = window_1
+vis.line(X=[0], Y=[0], win=window_1, opts=dict(title=title_1, xlabel='epoch', ylable='completion_time', font=dict(family='Times New Roman')))
+window_2 = 'total_delay_time' + agent_version
+title_2 = window_2
+vis.line(X=[0], Y=[0], win=window_2, opts=dict(title=title_2, xlabel='epoch', ylable='total_delay_time', font=dict(family='Times New Roman')))
+window_3 = 'total_energy_consumption' + agent_version
+title_3 = window_3
+vis.line(X=[0], Y=[0], win=window_3, opts=dict(title=title_3, xlabel='epoch', ylable='total_energy_consumption', font=dict(family='Times New Roman')))
+
+# 全局参数定义
+LOG_SIG_MAX = 2
+LOG_SIG_MIN = -20
+TRAINING_EPISODES_PER_EVAL_EPISODE = 10
+EPSILON = 1e-6
+
+
+class TaskPolicyNet(nn.Module):
+    def __init__(self, input_size_1, hidden_size, hidden_layer_1, output_size_1):
+        super(TaskPolicyNet, self).__init__()
+        self.name = ""task_policy""
+        # 定义工序策略网络输入层
+        self.layers_1 = nn.ModuleList([nn.Linear(input_size_1, hidden_size), nn.ReLU()])
+        # 定义工序策略网络隐藏层
+        for i in range(hidden_layer_1 - 1):
+            self.layers_1.append(nn.Linear(hidden_size, hidden_size))
+            self.layers_1.append(nn.ReLU())
+        # 定义工序策略网络输出层
+        self.layers_1.append(nn.Linear(hidden_size, output_size_1))
+
+    def forward(self, x):
+        for layer in self.layers_1:
+            x = layer(x)
+        x = F.softmax(x, dim=-1)
+        return x
+
+
+class MachinePolicyNet(nn.Module):
+    def __init__(self, input_size_2, hidden_size, hidden_layer_2, output_size_2):
+        super(MachinePolicyNet, self).__init__()
+        self.name = ""machine_policy""
+        # 定义机器策略网络输入层
+        self.layers_2 = nn.ModuleList([nn.Linear(input_size_2, hidden_size), nn.ReLU()])
+        # 定义机器策略网络隐藏层
+        for i in range(hidden_layer_2 - 1):
+            self.layers_2.append(nn.Linear(hidden_size, hidden_size))
+            self.layers_2.append(nn.ReLU())
+        # 定义机器策略网络输出层
+        self.layers_2.append(nn.Linear(hidden_size, output_size_2))
+
+    def forward(self, x):
+        for layer in self.layers_2:
+            x = layer(x)
+        x = F.softmax(x, dim=-1)
+        return x
+
+
+class PolicyNet(nn.Module):
+    """"""工序策略网络""""""
+    def __init__(self, input_size, hidden_size, hidden_layer, output_size):
+        super(PolicyNet, self).__init__()
+        self.name = ""task_policy""
+        # 定义工序策略网络输入层
+        self.layers = nn.ModuleList([nn.Linear(input_size, hidden_size), nn.ReLU()])
+        # 定义工序策略网络隐藏层
+        for i in range(hidden_layer - 1):
+            self.layers.append(nn.Linear(hidden_size, hidden_size))
+            self.layers.append(nn.ReLU())
+        # 定义工序策略网络输出层
+        self.layers.append(nn.Linear(hidden_size, output_size))
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        x = F.softmax(x, dim=-1)
+        return x
+
+
+class CriticNet(nn.Module):
+    """"""评论家网络""""""
+    def __init__(self, input_size, hidden_size, hidden_layer, output_size, seed=None):
+        super(CriticNet, self).__init__()
+        if seed is not None:
+            torch.manual_seed(seed)
+        # 定义评论家网络输入层
+        self.layers = nn.ModuleList([nn.Linear(input_size, hidden_size), nn.ReLU()])
+        # 定义评论家网络隐藏层
+        for i in range(hidden_layer - 1):
+            self.layers.append(nn.Linear(hidden_size, hidden_size))
+            self.layers.append(nn.ReLU())
+        # 定义评论家网络输出层
+        self.layers.append(nn.Linear(hidden_size, output_size))
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+
+class SAC_Discrete(Base_Agent, Config):
+    """"""离散动作软演员评论家算法""""""
+    def __init__(self):
+        Base_Agent.__init__(self)  # 继承基础智能体类
+        Config.__init__(self)  # 继承算法超参数类
+        self.config = Config()  # 算法控制参数
+        self.agent = ""HMP_SAC""
+        self.hyper_parameters = self.hyper_parameters[self.agent]  # 算法控制参数
+        self.action_types = ""DISCRETE""
+        assert self.action_types == ""DISCRETE"", ""Action types must be discrete. Use SAC instead for continuous actions""
+        # 定义测试环境
+        self.path = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/data/HMPSAC'  # 测试算例的存储位置
+        self.file_name = 'DDT0.5_M10_S1'  # 测试算例的文件夹名字
+        self.environment = MO_DFJSP_Environment(use_instance=False, path=self.path, file_name=self.file_name)  # 测试环境
+        # 超参数
+        self.num_episodes_to_run = self.hyper_parameters[""num_episodes_to_run""]  # 训练周期数
+        self.learning_rate = self.hyper_parameters[""learning_rate""]  # 学习率
+        self.discount_rate = self.hyper_parameters[""discount_rate""]  # 折扣率
+        self.buffer_size = self.hyper_parameters[""buffer_size""]  # 回放记忆缓存大小
+        self.batch_size = self.hyper_parameters[""batch_size""]  # 采样批量
+        self.gradient_clipping_norm = self.hyper_parameters[""gradient_clipping_norm""]  # 梯度裁剪
+        # 算法运行参数
+        self.global_step_number = 0  # 运行总步数
+        self.episode_number = 0  # 更新周期数
+        # 环境状态维度参数
+        self.state_size = 30
+        self.action_size = 3
+        self.actor_input_size = self.state_size
+        self.critic_input_size = self.state_size
+        # 定义评论家网络
+        self.critic_local = CriticNet(input_size=self.critic_input_size, hidden_size=200, hidden_layer=3,
+                                      output_size=self.action_size, seed=random.randint(1, 10)).to(self.device)
+        self.critic_local_2 = CriticNet(input_size=self.critic_input_size, hidden_size=200, hidden_layer=3,
+                                        output_size=self.action_size, seed=random.randint(11, 20)).to(self.device)
+        self.critic_optimizer = torch.optim.Adam(self.critic_local.parameters(), lr=self.hyper_parameters[""learning_rate""], eps=1e-4)
+        self.critic_optimizer_2 = torch.optim.Adam(self.critic_local_2.parameters(), lr=self.hyper_parameters[""learning_rate""], eps=1e-4)
+        self.critic_target = CriticNet(input_size=self.critic_input_size, hidden_size=200, hidden_layer=3, output_size=self.action_size).to(self.device)
+        self.critic_target_2 = CriticNet(input_size=self.critic_input_size, hidden_size=200, hidden_layer=3, output_size=self.action_size).to(self.device)
+        self.memory = Replay_Buffer(self.hyper_parameters[""buffer_size""], self.hyper_parameters[""batch_size""], device=self.device)
+        # 定义策略网络
+        self.actor_local = PolicyNet(input_size=self.actor_input_size, hidden_size=200, hidden_layer=3, output_size=self.action_size).to(self.device)
+        self.actor_optimizer = torch.optim.Adam(self.actor_local.parameters(), lr=self.hyper_parameters[""learning_rate""], eps=1e-4)
+        # 定义熵损失
+        self.automatic_entropy_tuning = self.hyper_parameters[""automatically_tune_entropy_hyper_parameter""]
+        if self.automatic_entropy_tuning:
+            # we set the max possible entropy as the target entropy
+            self.target_entropy = -np.log((1.0 / self.action_size)) * 0.98
+            self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
+            self.alpha = self.log_alpha.exp()
+            self.alpha_optim = Adam([self.log_alpha], lr=self.hyper_parameters[""learning_rate""], eps=1e-4)
+        else:
+            self.alpha = self.hyper_parameters[""entropy_term_weight""]
+        assert not self.hyper_parameters[""add_extra_noise""], ""目前没有为SAC的离散版本添加额外的噪声选项""
+        self.add_extra_noise = False
+        self.do_evaluation_iterations = self.hyper_parameters[""do_evaluation_iterations""]
+        # 导入三个训练好的目标策略网络
+        self.objectives_policy = {'makespan': 0, 'tardiness': 1, 'energy': 2}
+        self.action_size_dict = {'task': 12, 'machine': 10}
+        self.policy_dict = {0: {}, 1: {}, 2: {}}
+        self.load_policy_model()  # 加载网络
+
+    def load_policy_model(self):
+        """"""加载三目标策略网络""""""
+        for objective, policy in self.objectives_policy.items():
+            file_path = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/results/HMPSAC/policy_networks_v5.' + str(policy + 1) + '/'
+            actor_net_task = TaskPolicyNet(input_size_1=30, hidden_size=200, hidden_layer_1=3, output_size_1=12).to(self.device)
+            actor_net_task.load_state_dict(torch.load(file_path + 'actor_task_model.path'))
+            self.policy_dict[policy]['task'] = actor_net_task
+            actor_net_machine = MachinePolicyNet(input_size_2=31, hidden_size=200, hidden_layer_2=3, output_size_2=10).to(self.device)
+            actor_net_machine.load_state_dict(torch.load(file_path + 'actor_machine_model.path'))
+            self.policy_dict[policy]['machine'] = actor_net_machine
+
+    def run_n_episodes(self):
+        """"""运行N个周期""""""
+        for epoch in range(self.num_episodes_to_run):
+            environment = self.environment
+            objectives_values = []
+            # 基于三个目标策略网络获得实例的三个目标基准值
+            for objective, policy in self.objectives_policy.items():
+                # 基于控制策略网络收集训练数据：选择目标+选择工序规则+选择机器规则+基于复合动作step环境
+                self.state = environment.reset()
+                self.done = environmen
+... [truncated]"
+"File:agents/HMPSAC/Buffer.py","Buffer.py","agents/HMPSAC/Buffer.py","from collections import namedtuple, deque
+import random
+import torch
+import numpy as np
+
+
+class Replay_Buffer():
+    """"""重放缓存区类""""""
+    def __init__(self, device=None):
+
+        self.memory = deque()
+        self.experience = namedtuple(""Experience"", field_names=[""state"", ""action"", ""reward"", ""next_state"", ""done""])
+
+        if device:
+            self.device = torch.device(device)
+        else:
+            self.device = torch.device(""cuda:0"" if torch.cuda.is_available() else ""cpu"")
+
+    def add_experience(self, states, actions, rewards, next_states, dones):
+        """"""将经验添加到重放缓冲区中""""""
+        if type(dones) == list:
+            assert type(dones[0]) != list, ""A done shouldn't be a list""
+            experiences = [self.experience(state, action, reward, next_state, done)
+                           for state, action, reward, next_state, done in zip(states, actions, rewards, next_states, dones)]
+            self.memory.extend(experiences)
+        else:
+            experience = self.experience(states, actions, rewards, next_states, dones)
+            self.memory.append(experience)
+
+    def sample(self, separate_out_data_types=True):
+        """"""从重放缓冲中抽取经验的随机样本""""""
+        experiences = self.pick_experiences()
+        if separate_out_data_types:
+            states, actions, rewards, next_states, dones = self.separate_out_data_types(experiences)
+            return states, actions, rewards, next_states, dones
+        else:
+            return experiences
+
+    def separate_out_data_types(self, experiences):
+        """"""将采样经验转换为PyTorch神经网络的正确格式""""""
+        states = torch.from_numpy(np.vstack([e.state for e in experiences if e is not None])).float().to(self.device)
+        actions = torch.from_numpy(np.vstack([e.action for e in experiences if e is not None])).float().to(self.device).squeeze(1)
+        rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float().to(self.device).squeeze(1)
+        next_states = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float().to(self.device)
+        dones = torch.from_numpy(np.vstack([int(e.done) for e in experiences if e is not None])).float().to(self.device).squeeze(1)
+        
+        return states, actions, rewards, next_states, dones
+
+    def pick_experiences(self):
+        """"""随机采样batch_size条经验""""""
+        return self.memory  # 随机选取batch_size个经验
+
+    def clear(self):
+        """"""清空缓存""""""
+        self.memory.clear()
+
+    def __len__(self):
+        return len(self.memory)
+"
+"File:agents/HMPSAC/A2C_v5.3.py","A2C_v5.3.py","agents/HMPSAC/A2C_v5.3.py","""""""
+双重异步优势演员评论家算法
+三个网络：工序策略网络+机器策略网络+评论家网络
+""""""
+import copy
+import random
+import time
+import numpy as np
+import torch
+from torch import multiprocessing
+from torch.multiprocessing import Queue
+from torch.optim import Adam
+from agents.Base_Agent import Base_Agent
+from utilities.Utility_Functions import create_actor_distribution, SharedAdam
+from utilities.data_structures.Config import Config
+from environments.MO_DFJSP import MO_DFJSP_Environment
+import torch.nn.functional as F
+from torch import nn
+from visdom import Visdom
+from utilities.Utility_Class import AddData
+agent_version = '_v5.3'
+# 训练结果数据保存位置
+path_file_name = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/results/HMPSAC/training' + agent_version + '.csv'
+add_data_object = AddData(path_file_name)
+add_data_object.add_data(['epoch', 'energy'])
+# 监控训练过程
+window_name = 'Double Actor_critic' + agent_version
+vis = Visdom()
+win = window_name
+title = window_name
+vis.line(X=[0], Y=[0], win=win, opts=dict(title=title, xlabel='epoch', ylable='energy_consumption', font=dict(family='Times New Roman')))
+
+
+# 构建工序策略网络类
+class TaskPolicyNet(nn.Module):
+    def __init__(self, input_size_1, hidden_size, hidden_layer_1, output_size_1):
+        super(TaskPolicyNet, self).__init__()
+        self.name = ""task_policy""
+        # 定义工序策略网络输入层
+        self.layers_1 = nn.ModuleList([nn.Linear(input_size_1, hidden_size), nn.ReLU()])
+        # 定义工序策略网络隐藏层
+        for i in range(hidden_layer_1 - 1):
+            self.layers_1.append(nn.Linear(hidden_size, hidden_size))
+            self.layers_1.append(nn.ReLU())
+        # 定义工序策略网络输出层
+        self.layers_1.append(nn.Linear(hidden_size, output_size_1))
+
+    def forward(self, x):
+        for layer in self.layers_1:
+            x = layer(x)
+        x = F.softmax(x, dim=-1)
+        return x
+
+
+# 构建机器策略网络类
+class MachinePolicyNet(nn.Module):
+    def __init__(self, input_size_2, hidden_size, hidden_layer_2, output_size_2):
+        super(MachinePolicyNet, self).__init__()
+        self.name = ""machine_policy""
+        # 定义机器策略网络输入层
+        self.layers_2 = nn.ModuleList([nn.Linear(input_size_2, hidden_size), nn.ReLU()])
+        # 定义机器策略网络隐藏层
+        for i in range(hidden_layer_2 - 1):
+            self.layers_2.append(nn.Linear(hidden_size, hidden_size))
+            self.layers_2.append(nn.ReLU())
+        # 定义机器策略网络输出层
+        self.layers_2.append(nn.Linear(hidden_size, output_size_2))
+
+    def forward(self, x):
+        for layer in self.layers_2:
+            x = layer(x)
+        x = F.softmax(x, dim=-1)
+        return x
+
+
+# 构建评论家网络
+class CriticNet(nn.Module):
+    def __init__(self, input_size, hidden_size, hidden_layer, output_size):
+        super(CriticNet, self).__init__()
+        # 定义评论家网络输入层
+        self.layers = nn.ModuleList([nn.Linear(input_size, hidden_size), nn.ReLU()])
+        # 定义评论家网络隐藏层
+        for i in range(hidden_layer - 1):
+            self.layers.append(nn.Linear(hidden_size, hidden_size))
+            self.layers.append(nn.ReLU())
+        # 定义评论家网络输出层
+        self.layers.append(nn.Linear(hidden_size, output_size))
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+
+class DA3C(Base_Agent, Config):
+    """"""Actor critic A3C algorithm""""""
+    agent_name = ""DA3C""
+
+    def __init__(self):
+        Base_Agent.__init__(self)  # 继承基础智能体类
+        Config.__init__(self)  # 继承算法超参数类
+        self.num_processes = multiprocessing.cpu_count()  # 电脑线程数量|四核八线程
+        self.worker_processes = max(1, self.num_processes - 3)  # 启用线程数
+        self.path = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/data/HMPSAC'  # 测试算例的存储位置
+        self.file_name = 'DDT1.0_M15_S3'  # 测试算例的文件夹名字
+        self.environment_test = MO_DFJSP_Environment(use_instance=False, path=self.path, file_name=self.file_name)  # 测试环境
+        self.config = Config
+        # 超参数
+        self.learning_rate = self.hyper_parameters[""DA3C""][""learning_rate""]  # 学习率
+        self.discount_rate = self.hyper_parameters[""DA3C""][""discount_rate""]  # 折扣率
+        self.num_episodes_to_run = self.hyper_parameters[""DA3C""][""num_episodes_to_run""]  # 总的步数
+        self.epsilon_decay_rate_denominator = self.hyper_parameters[""DA3C""][""epsilon_decay_rate_denominator""]
+        # 初始化锁对象 用来更新全局网络参数
+        self.optimizer_lock = None
+        # 定义策略网络和评论家网络
+        self.actor_task_model = TaskPolicyNet(input_size_1=30, hidden_size=200, hidden_layer_1=3, output_size_1=12)
+        self.actor_machine_model = MachinePolicyNet(input_size_2=31, hidden_size=200, hidden_layer_2=3, output_size_2=10)
+        self.critic_model = CriticNet(input_size=30, hidden_size=200, hidden_layer=3, output_size=1)
+        # 定义优化器
+        self.actor_task_optimizer = SharedAdam(self.actor_task_model.parameters(), lr=self.learning_rate, eps=1e-4)
+        self.actor_machine_optimizer = SharedAdam(self.actor_machine_model.parameters(), lr=self.learning_rate, eps=1e-4)
+        self.critic_optimizer = SharedAdam(self.critic_model.parameters(), lr=self.learning_rate, eps=1e-4)
+        self.episode_number = 0  # 当前训练周期
+
+    def run_n_episodes(self):
+        """"""运行环境n次直到完成，然后总结结果并保存模型(如果要求的话)""""""
+        start = time.time()
+        gradient_updates_queue_actor_task = Queue()
+        gradient_updates_queue_actor_machine = Queue()
+        gradient_updates_queue_critic = Queue()
+        self.episode_number = multiprocessing.Value('i', 0)  # 多线程共享整数型+初始值为0的参数
+        self.optimizer_lock = multiprocessing.Lock()   # 创建锁对象，用于更新全局网络参数
+        episodes_per_process = int(self.num_episodes_to_run / self.worker_processes) + 1
+        processes = []  # 初始化线程列表
+        self.actor_task_model.share_memory()
+        self.actor_machine_model.share_memory()
+        self.critic_model.share_memory()
+        self.actor_task_optimizer.share_memory()
+        self.actor_machine_optimizer.share_memory()
+        self.critic_optimizer.share_memory()
+        optimizer_worker = multiprocessing.Process(target=self.update_shared_model,
+                                                   args=(gradient_updates_queue_actor_task,
+                                                         gradient_updates_queue_actor_machine,
+                                                         gradient_updates_queue_critic))
+        optimizer_worker.start()  # 启动总梯度更新主线程
+
+        for process_num in range(self.worker_processes):
+            worker = Actor_Critic_Worker(process_num, self.actor_task_model, self.actor_machine_model, self.critic_model,
+                                         self.episode_number, self.optimizer_lock, self.actor_task_optimizer,
+                                         self.actor_machine_optimizer, self.critic_optimizer, self.hyper_parameters,
+                                         episodes_per_process, self.epsilon_decay_rate_denominator,
+                                         copy.deepcopy(self.actor_task_model), copy.deepcopy(self.actor_machine_model),
+                                         copy.deepcopy(self.critic_model), gradient_updates_queue_actor_task,
+                                         gradient_updates_queue_actor_machine, gradient_updates_queue_critic,
+                                         self.environment_test)
+            worker.start()  # 启动各子线程run()函数
+            processes.append(worker)
+        for worker in processes:
+            worker.join()  # 让子线程结束后主线程再结束
+        optimizer_worker.terminate()  # 主线程退出
+        time_taken = time.time() - start
+        return time_taken
+
+    def update_shared_model(self, gradient_updates_queue_actor_task,
+                            gradient_updates_queue_actor_machine,
+                            gradient_updates_queue_critic):
+        """"""收到工作线程的梯度{信息传入队列}，更新全局网络梯度""""""
+        while True:
+            gradients_actor_task = gradient_updates_queue_actor_task.get()
+            gradients_actor_machine = gradient_updates_queue_actor_machine.get()
+            gradients_critic = gradient_updates_queue_critic.get()
+            with self.optimizer_lock:
+                # 更新工序策略网络梯度
+                self.actor_task_optimizer.zero_grad()
+                for grads, params in zip(gradients_actor_task, self.actor_task_model.parameters()):
+                    params._grad = grads  # maybe need to do grads.clone()  # 子线程梯度值传递给全局网络参数
+                self.actor_task_optimizer.step()  # 依据传递的新的梯度值更新参数
+                # 更新机器策略网络梯度
+                self.actor_machine_optimizer.zero_grad()
+                for grads, params in zip(gradients_actor_machine, self.actor_machine_model.parameters()):
+                    params._grad = grads  # maybe need to do grads.clone()  # 子线程梯度值传递给全局网络参数
+                self.actor_machine_optimizer.step()  # 依据传递的新的梯度值更新参数
+                # 更新全局评论家网络梯度
+                self.critic_optimizer.zero_grad()
+                for grads, params in zip(gradients_critic, self.critic_model.parameters()):
+                    params._grad = grads
+                self.critic_optimizer.step()  # 依据传递的新的梯度值更新参数
+
+
+class Actor_Critic_Worker(torch.multiprocessing.Process):
+    """"""演员评论工作者将玩游戏的指定集数 """"""
+    def __init__(self, worker_num, actor_task_model, actor_machine_model, critic_model, counter, optimizer_lock,
+                 actor_task_optimizer, actor_machine_optimizer, critic_optimizer, hyper_parameter, episodes_to_run,
+                 epsilon_decay_denominator, local_actor_task_model, local_actor_machine_model, local_critic_model,
+                 gradient_updates_queue_actor_task, gradient_updates_queue_actor_machine,
+                 gradient_updates_queue_critic, environment_test):
+        torch.multiprocessing.Process.__init__(self)
+        self.environment_test = environment_test  # 初始化环境对象
+        self.environment = None  # 初始化训练环境对象
+        self.action_types = self.environment_test.action_types  # 动作类型
+        self.worker_num = worker_num  # 线程数
+        self.gradient_
+... [truncated]"
+"File:agents/HMPSAC/A2C_v5.2.py","A2C_v5.2.py","agents/HMPSAC/A2C_v5.2.py","""""""
+双重异步优势演员评论家算法
+三个网络：工序策略网络+机器策略网络+评论家网络
+""""""
+import copy
+import random
+import time
+import numpy as np
+import torch
+from torch import multiprocessing
+from torch.multiprocessing import Queue
+from torch.optim import Adam
+from agents.Base_Agent import Base_Agent
+from utilities.Utility_Functions import create_actor_distribution, SharedAdam
+from utilities.data_structures.Config import Config
+from environments.MO_DFJSP import MO_DFJSP_Environment
+import torch.nn.functional as F
+from torch import nn
+from visdom import Visdom
+from utilities.Utility_Class import AddData
+agent_version = '_v5.2'
+# 训练结果数据保存位置
+path_file_name = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/results/HMPSAC/training' + agent_version + '.csv'
+add_data_object = AddData(path_file_name)
+add_data_object.add_data(['epoch', 'tardiness'])
+# 监控训练过程
+window_name = 'Double Actor_critic' + agent_version
+vis = Visdom()
+win = window_name
+title = window_name
+vis.line(X=[0], Y=[0], win=win, opts=dict(title=title, xlabel='epoch', ylable='total_tardiness', font=dict(family='Times New Roman')))
+
+
+# 构建工序策略网络类
+class TaskPolicyNet(nn.Module):
+    def __init__(self, input_size_1, hidden_size, hidden_layer_1, output_size_1):
+        super(TaskPolicyNet, self).__init__()
+        self.name = ""task_policy""
+        # 定义工序策略网络输入层
+        self.layers_1 = nn.ModuleList([nn.Linear(input_size_1, hidden_size), nn.ReLU()])
+        # 定义工序策略网络隐藏层
+        for i in range(hidden_layer_1 - 1):
+            self.layers_1.append(nn.Linear(hidden_size, hidden_size))
+            self.layers_1.append(nn.ReLU())
+        # 定义工序策略网络输出层
+        self.layers_1.append(nn.Linear(hidden_size, output_size_1))
+
+    def forward(self, x):
+        for layer in self.layers_1:
+            x = layer(x)
+        x = F.softmax(x, dim=-1)
+        return x
+
+
+# 构建机器策略网络类
+class MachinePolicyNet(nn.Module):
+    def __init__(self, input_size_2, hidden_size, hidden_layer_2, output_size_2):
+        super(MachinePolicyNet, self).__init__()
+        self.name = ""machine_policy""
+        # 定义机器策略网络输入层
+        self.layers_2 = nn.ModuleList([nn.Linear(input_size_2, hidden_size), nn.ReLU()])
+        # 定义机器策略网络隐藏层
+        for i in range(hidden_layer_2 - 1):
+            self.layers_2.append(nn.Linear(hidden_size, hidden_size))
+            self.layers_2.append(nn.ReLU())
+        # 定义机器策略网络输出层
+        self.layers_2.append(nn.Linear(hidden_size, output_size_2))
+
+    def forward(self, x):
+        for layer in self.layers_2:
+            x = layer(x)
+        x = F.softmax(x, dim=-1)
+        return x
+
+
+# 构建评论家网络
+class CriticNet(nn.Module):
+    def __init__(self, input_size, hidden_size, hidden_layer, output_size):
+        super(CriticNet, self).__init__()
+        # 定义评论家网络输入层
+        self.layers = nn.ModuleList([nn.Linear(input_size, hidden_size), nn.ReLU()])
+        # 定义评论家网络隐藏层
+        for i in range(hidden_layer - 1):
+            self.layers.append(nn.Linear(hidden_size, hidden_size))
+            self.layers.append(nn.ReLU())
+        # 定义评论家网络输出层
+        self.layers.append(nn.Linear(hidden_size, output_size))
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+
+class DA3C(Base_Agent, Config):
+    """"""Actor critic A3C algorithm""""""
+    agent_name = ""DA3C""
+
+    def __init__(self):
+        Base_Agent.__init__(self)  # 继承基础智能体类
+        Config.__init__(self)  # 继承算法超参数类
+        self.num_processes = multiprocessing.cpu_count()  # 电脑线程数量|四核八线程
+        self.worker_processes = max(1, self.num_processes - 3)  # 启用线程数
+        self.path = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/data/HMPSAC'  # 测试算例的存储位置
+        self.file_name = 'DDT1.0_M15_S3'  # 测试算例的文件夹名字
+        self.environment_test = MO_DFJSP_Environment(use_instance=False, path=self.path, file_name=self.file_name)  # 测试环境
+        self.config = Config
+        # 超参数
+        self.learning_rate = self.hyper_parameters[""DA3C""][""learning_rate""]  # 学习率
+        self.discount_rate = self.hyper_parameters[""DA3C""][""discount_rate""]  # 折扣率
+        self.num_episodes_to_run = self.hyper_parameters[""DA3C""][""num_episodes_to_run""]  # 总的步数
+        self.epsilon_decay_rate_denominator = self.hyper_parameters[""DA3C""][""epsilon_decay_rate_denominator""]
+        # 初始化锁对象 用来更新全局网络参数
+        self.optimizer_lock = None
+        # 定义策略网络和评论家网络
+        self.actor_task_model = TaskPolicyNet(input_size_1=30, hidden_size=200, hidden_layer_1=3, output_size_1=12)
+        self.actor_machine_model = MachinePolicyNet(input_size_2=31, hidden_size=200, hidden_layer_2=3, output_size_2=10)
+        self.critic_model = CriticNet(input_size=30, hidden_size=200, hidden_layer=3, output_size=1)
+        # 定义优化器
+        self.actor_task_optimizer = SharedAdam(self.actor_task_model.parameters(), lr=self.learning_rate, eps=1e-4)
+        self.actor_machine_optimizer = SharedAdam(self.actor_machine_model.parameters(), lr=self.learning_rate, eps=1e-4)
+        self.critic_optimizer = SharedAdam(self.critic_model.parameters(), lr=self.learning_rate, eps=1e-4)
+        self.episode_number = 0  # 当前训练周期
+
+    def run_n_episodes(self):
+        """"""运行环境n次直到完成，然后总结结果并保存模型(如果要求的话)""""""
+        start = time.time()
+        gradient_updates_queue_actor_task = Queue()
+        gradient_updates_queue_actor_machine = Queue()
+        gradient_updates_queue_critic = Queue()
+        self.episode_number = multiprocessing.Value('i', 0)  # 多线程共享整数型+初始值为0的参数
+        self.optimizer_lock = multiprocessing.Lock()   # 创建锁对象，用于更新全局网络参数
+        episodes_per_process = int(self.num_episodes_to_run / self.worker_processes) + 1
+        processes = []  # 初始化线程列表
+        self.actor_task_model.share_memory()
+        self.actor_machine_model.share_memory()
+        self.critic_model.share_memory()
+        self.actor_task_optimizer.share_memory()
+        self.actor_machine_optimizer.share_memory()
+        self.critic_optimizer.share_memory()
+        optimizer_worker = multiprocessing.Process(target=self.update_shared_model,
+                                                   args=(gradient_updates_queue_actor_task,
+                                                         gradient_updates_queue_actor_machine,
+                                                         gradient_updates_queue_critic))
+        optimizer_worker.start()  # 启动总梯度更新主线程
+
+        for process_num in range(self.worker_processes):
+            worker = Actor_Critic_Worker(process_num, self.actor_task_model, self.actor_machine_model, self.critic_model,
+                                         self.episode_number, self.optimizer_lock, self.actor_task_optimizer,
+                                         self.actor_machine_optimizer, self.critic_optimizer, self.hyper_parameters,
+                                         episodes_per_process, self.epsilon_decay_rate_denominator,
+                                         copy.deepcopy(self.actor_task_model), copy.deepcopy(self.actor_machine_model),
+                                         copy.deepcopy(self.critic_model), gradient_updates_queue_actor_task,
+                                         gradient_updates_queue_actor_machine, gradient_updates_queue_critic,
+                                         self.environment_test)
+            worker.start()  # 启动各子线程run()函数
+            processes.append(worker)
+        for worker in processes:
+            worker.join()  # 让子线程结束后主线程再结束
+        optimizer_worker.terminate()  # 主线程退出
+        time_taken = time.time() - start
+        return time_taken
+
+    def update_shared_model(self, gradient_updates_queue_actor_task,
+                            gradient_updates_queue_actor_machine,
+                            gradient_updates_queue_critic):
+        """"""收到工作线程的梯度{信息传入队列}，更新全局网络梯度""""""
+        while True:
+            gradients_actor_task = gradient_updates_queue_actor_task.get()
+            gradients_actor_machine = gradient_updates_queue_actor_machine.get()
+            gradients_critic = gradient_updates_queue_critic.get()
+            with self.optimizer_lock:
+                # 更新工序策略网络梯度
+                self.actor_task_optimizer.zero_grad()
+                for grads, params in zip(gradients_actor_task, self.actor_task_model.parameters()):
+                    params._grad = grads  # maybe need to do grads.clone()  # 子线程梯度值传递给全局网络参数
+                self.actor_task_optimizer.step()  # 依据传递的新的梯度值更新参数
+                # 更新机器策略网络梯度
+                self.actor_machine_optimizer.zero_grad()
+                for grads, params in zip(gradients_actor_machine, self.actor_machine_model.parameters()):
+                    params._grad = grads  # maybe need to do grads.clone()  # 子线程梯度值传递给全局网络参数
+                self.actor_machine_optimizer.step()  # 依据传递的新的梯度值更新参数
+                # 更新全局评论家网络梯度
+                self.critic_optimizer.zero_grad()
+                for grads, params in zip(gradients_critic, self.critic_model.parameters()):
+                    params._grad = grads
+                self.critic_optimizer.step()  # 依据传递的新的梯度值更新参数
+
+
+class Actor_Critic_Worker(torch.multiprocessing.Process):
+    """"""演员评论工作者将玩游戏的指定集数 """"""
+    def __init__(self, worker_num, actor_task_model, actor_machine_model, critic_model, counter, optimizer_lock,
+                 actor_task_optimizer, actor_machine_optimizer, critic_optimizer, hyper_parameter, episodes_to_run,
+                 epsilon_decay_denominator, local_actor_task_model, local_actor_machine_model, local_critic_model,
+                 gradient_updates_queue_actor_task, gradient_updates_queue_actor_machine,
+                 gradient_updates_queue_critic, environment_test):
+        torch.multiprocessing.Process.__init__(self)
+        self.environment_test = environment_test  # 初始化环境对象
+        self.environment = None  # 初始化训练环境对象
+        self.action_types = self.environment_test.action_types  # 动作类型
+        self.worker_num = worker_num  # 线程数
+        self.gradient_
+... [truncated]"
+"File:agents/HMPSAC/A2C_v5.1.py","A2C_v5.1.py","agents/HMPSAC/A2C_v5.1.py","""""""
+双重异步优势演员评论家算法
+三个网络：工序策略网络+机器策略网络+评论家网络
+""""""
+import copy
+import random
+import time
+import numpy as np
+import torch
+from torch import multiprocessing
+from torch.multiprocessing import Queue
+from torch.optim import Adam
+from agents.Base_Agent import Base_Agent
+from utilities.Utility_Functions import create_actor_distribution, SharedAdam
+from utilities.data_structures.Config import Config
+from environments.MO_DFJSP import MO_DFJSP_Environment
+import torch.nn.functional as F
+from torch import nn
+from visdom import Visdom
+from utilities.Utility_Class import AddData
+agent_version = '_v5.1'
+# 训练结果数据保存位置
+path_file_name = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/results/HMPSAC/training' + agent_version + '.csv'
+add_data_object = AddData(path_file_name)
+add_data_object.add_data(['epoch', 'makespan'])
+# 监控训练过程
+window_name = 'Double Actor_critic' + agent_version
+vis = Visdom()
+win = window_name
+title = window_name
+vis.line(X=[0], Y=[650], win=win, opts=dict(title=title, xlabel='epoch', ylable='completion_time', font=dict(family='Times New Roman')))
+
+
+# 构建工序策略网络类
+class TaskPolicyNet(nn.Module):
+    def __init__(self, input_size_1, hidden_size, hidden_layer_1, output_size_1):
+        super(TaskPolicyNet, self).__init__()
+        self.name = ""task_policy""
+        # 定义工序策略网络输入层
+        self.layers_1 = nn.ModuleList([nn.Linear(input_size_1, hidden_size), nn.ReLU()])
+        # 定义工序策略网络隐藏层
+        for i in range(hidden_layer_1 - 1):
+            self.layers_1.append(nn.Linear(hidden_size, hidden_size))
+            self.layers_1.append(nn.ReLU())
+        # 定义工序策略网络输出层
+        self.layers_1.append(nn.Linear(hidden_size, output_size_1))
+
+    def forward(self, x):
+        for layer in self.layers_1:
+            x = layer(x)
+        x = F.softmax(x, dim=-1)
+        return x
+
+
+# 构建机器策略网络类
+class MachinePolicyNet(nn.Module):
+    def __init__(self, input_size_2, hidden_size, hidden_layer_2, output_size_2):
+        super(MachinePolicyNet, self).__init__()
+        self.name = ""machine_policy""
+        # 定义机器策略网络输入层
+        self.layers_2 = nn.ModuleList([nn.Linear(input_size_2, hidden_size), nn.ReLU()])
+        # 定义机器策略网络隐藏层
+        for i in range(hidden_layer_2 - 1):
+            self.layers_2.append(nn.Linear(hidden_size, hidden_size))
+            self.layers_2.append(nn.ReLU())
+        # 定义机器策略网络输出层
+        self.layers_2.append(nn.Linear(hidden_size, output_size_2))
+
+    def forward(self, x):
+        for layer in self.layers_2:
+            x = layer(x)
+        x = F.softmax(x, dim=-1)
+        return x
+
+
+# 构建评论家网络
+class CriticNet(nn.Module):
+    def __init__(self, input_size, hidden_size, hidden_layer, output_size):
+        super(CriticNet, self).__init__()
+        # 定义评论家网络输入层
+        self.layers = nn.ModuleList([nn.Linear(input_size, hidden_size), nn.ReLU()])
+        # 定义评论家网络隐藏层
+        for i in range(hidden_layer - 1):
+            self.layers.append(nn.Linear(hidden_size, hidden_size))
+            self.layers.append(nn.ReLU())
+        # 定义评论家网络输出层
+        self.layers.append(nn.Linear(hidden_size, output_size))
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+
+class DA3C(Base_Agent, Config):
+    """"""Actor critic A3C algorithm""""""
+    agent_name = ""DA3C""
+
+    def __init__(self):
+        Base_Agent.__init__(self)  # 继承基础智能体类
+        Config.__init__(self)  # 继承算法超参数类
+        self.num_processes = multiprocessing.cpu_count()  # 电脑线程数量|四核八线程
+        self.worker_processes = max(1, self.num_processes - 5)  # 启用线程数
+        self.path = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/data/HMPSAC'  # 测试算例的存储位置
+        self.file_name = 'DDT1.0_M15_S3'  # 测试算例的文件夹名字
+        self.environment_test = MO_DFJSP_Environment(use_instance=False, path=self.path, file_name=self.file_name)  # 测试环境
+        self.config = Config
+        # 超参数
+        self.learning_rate = self.hyper_parameters[""DA3C""][""learning_rate""]  # 学习率
+        self.discount_rate = self.hyper_parameters[""DA3C""][""discount_rate""]  # 折扣率
+        self.num_episodes_to_run = self.hyper_parameters[""DA3C""][""num_episodes_to_run""]  # 总的步数
+        self.epsilon_decay_rate_denominator = self.hyper_parameters[""DA3C""][""epsilon_decay_rate_denominator""]
+        # 初始化锁对象 用来更新全局网络参数
+        self.optimizer_lock = None
+        # 定义策略网络和评论家网络
+        self.actor_task_model = TaskPolicyNet(input_size_1=30, hidden_size=200, hidden_layer_1=3, output_size_1=12)
+        self.actor_machine_model = MachinePolicyNet(input_size_2=31, hidden_size=200, hidden_layer_2=3, output_size_2=10)
+        self.critic_model = CriticNet(input_size=30, hidden_size=200, hidden_layer=3, output_size=1)
+        # 定义优化器
+        self.actor_task_optimizer = SharedAdam(self.actor_task_model.parameters(), lr=self.learning_rate, eps=1e-4)
+        self.actor_machine_optimizer = SharedAdam(self.actor_machine_model.parameters(), lr=self.learning_rate, eps=1e-4)
+        self.critic_optimizer = SharedAdam(self.critic_model.parameters(), lr=self.learning_rate, eps=1e-4)
+        self.episode_number = 0  # 当前训练周期
+
+    def run_n_episodes(self):
+        """"""运行环境n次直到完成，然后总结结果并保存模型(如果要求的话)""""""
+        start = time.time()
+        gradient_updates_queue_actor_task = Queue()
+        gradient_updates_queue_actor_machine = Queue()
+        gradient_updates_queue_critic = Queue()
+        self.episode_number = multiprocessing.Value('i', 0)  # 多线程共享整数型+初始值为0的参数
+        self.optimizer_lock = multiprocessing.Lock()   # 创建锁对象，用于更新全局网络参数
+        episodes_per_process = int(self.num_episodes_to_run / self.worker_processes) + 1
+        processes = []  # 初始化线程列表
+        self.actor_task_model.share_memory()
+        self.actor_machine_model.share_memory()
+        self.critic_model.share_memory()
+        self.actor_task_optimizer.share_memory()
+        self.actor_machine_optimizer.share_memory()
+        self.critic_optimizer.share_memory()
+        optimizer_worker = multiprocessing.Process(target=self.update_shared_model,
+                                                   args=(gradient_updates_queue_actor_task,
+                                                         gradient_updates_queue_actor_machine,
+                                                         gradient_updates_queue_critic))
+        optimizer_worker.start()  # 启动总梯度更新主线程
+
+        for process_num in range(self.worker_processes):
+            worker = Actor_Critic_Worker(process_num, self.actor_task_model, self.actor_machine_model, self.critic_model,
+                                         self.episode_number, self.optimizer_lock, self.actor_task_optimizer,
+                                         self.actor_machine_optimizer, self.critic_optimizer, self.hyper_parameters,
+                                         episodes_per_process, self.epsilon_decay_rate_denominator,
+                                         copy.deepcopy(self.actor_task_model), copy.deepcopy(self.actor_machine_model),
+                                         copy.deepcopy(self.critic_model), gradient_updates_queue_actor_task,
+                                         gradient_updates_queue_actor_machine, gradient_updates_queue_critic,
+                                         self.environment_test)
+            worker.start()  # 启动各子线程run()函数
+            processes.append(worker)
+        for worker in processes:
+            worker.join()  # 让子线程结束后主线程再结束
+        optimizer_worker.terminate()  # 主线程退出
+        time_taken = time.time() - start
+        return time_taken
+
+    def update_shared_model(self, gradient_updates_queue_actor_task,
+                            gradient_updates_queue_actor_machine,
+                            gradient_updates_queue_critic):
+        """"""收到工作线程的梯度{信息传入队列}，更新全局网络梯度""""""
+        while True:
+            gradients_actor_task = gradient_updates_queue_actor_task.get()
+            gradients_actor_machine = gradient_updates_queue_actor_machine.get()
+            gradients_critic = gradient_updates_queue_critic.get()
+            with self.optimizer_lock:
+                # 更新工序策略网络梯度
+                self.actor_task_optimizer.zero_grad()
+                for grads, params in zip(gradients_actor_task, self.actor_task_model.parameters()):
+                    params._grad = grads  # maybe need to do grads.clone()  # 子线程梯度值传递给全局网络参数
+                self.actor_task_optimizer.step()  # 依据传递的新的梯度值更新参数
+                # 更新机器策略网络梯度
+                self.actor_machine_optimizer.zero_grad()
+                for grads, params in zip(gradients_actor_machine, self.actor_machine_model.parameters()):
+                    params._grad = grads  # maybe need to do grads.clone()  # 子线程梯度值传递给全局网络参数
+                self.actor_machine_optimizer.step()  # 依据传递的新的梯度值更新参数
+                # 更新全局评论家网络梯度
+                self.critic_optimizer.zero_grad()
+                for grads, params in zip(gradients_critic, self.critic_model.parameters()):
+                    params._grad = grads
+                self.critic_optimizer.step()  # 依据传递的新的梯度值更新参数
+
+
+class Actor_Critic_Worker(torch.multiprocessing.Process):
+    """"""演员评论工作者将玩游戏的指定集数 """"""
+    def __init__(self, worker_num, actor_task_model, actor_machine_model, critic_model, counter, optimizer_lock,
+                 actor_task_optimizer, actor_machine_optimizer, critic_optimizer, hyper_parameter, episodes_to_run,
+                 epsilon_decay_denominator, local_actor_task_model, local_actor_machine_model, local_critic_model,
+                 gradient_updates_queue_actor_task, gradient_updates_queue_actor_machine,
+                 gradient_updates_queue_critic, environment_test):
+        torch.multiprocessing.Process.__init__(self)
+        self.environment_test = environment_test  # 初始化环境对象
+        self.environment = None  # 初始化训练环境对象
+        self.action_types = self.environment_test.action_types  # 动作类型
+        self.worker_num = worker_num  # 线程数
+        self.gradient
+... [truncated]"

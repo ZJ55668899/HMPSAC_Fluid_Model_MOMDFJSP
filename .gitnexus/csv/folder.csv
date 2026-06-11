@@ -1,0 +1,11 @@
+id,name,filePath
+"Folder:utilities","utilities","utilities"
+"Folder:environments","environments","environments"
+"Folder:agents","agents","agents"
+"Folder:exploration_strategies","exploration_strategies","exploration_strategies"
+"Folder:utilities/data_structures","data_structures","utilities/data_structures"
+"Folder:results","results","results"
+"Folder:results/HMPSAC_T","HMPSAC_T","results/HMPSAC_T"
+"Folder:results/HMPSAC_E","HMPSAC_E","results/HMPSAC_E"
+"Folder:results/HMPSAC","HMPSAC","results/HMPSAC"
+"Folder:agents/HMPSAC","HMPSAC","agents/HMPSAC"

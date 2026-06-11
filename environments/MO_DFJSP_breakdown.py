@@ -7,6 +7,7 @@ import random, math, time
 import numpy as np
 from environments.class_MODFJSP import FJSP
 from utilities.Utility_Class import MyError, FigGan, AddData
+from utilities.Project_Paths import HMPSAC_DATA_DIR
 
 
 class MO_DFJSP_Environment(FJSP):
@@ -509,7 +510,7 @@ class MO_DFJSP_Environment(FJSP):
 
 
 if __name__ == '__main__':
-    path = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/data/HMPSAC_breakdown'
+    path = str(HMPSAC_DATA_DIR)
     # file_csv = '/rules_objectives.csv'
     # data_add = AddData(path + file_csv)
     # data_add.add_data(['actions', 'completion', 'tardiness', 'energy'])

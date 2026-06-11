@@ -9,6 +9,7 @@ from environments.Instance_generate import Instance
 from docplex.mp.model import Model
 from environments.MO_DFJSP_instance_read import Data
 from utilities.Utility_Class import MyError
+from utilities.Project_Paths import HMPSAC_DATA_DIR
 
 
 class Order():
@@ -314,7 +315,7 @@ class FJSP(Instance, Data):
 # 测试环境
 if __name__ == '__main__':
     file_name = 'DDT1.0_M15_S1'
-    path = 'D:/Python project/HMPSAC_Fluid_Model_MOMDFJSP/data/HMPSAC'
+    path = str(HMPSAC_DATA_DIR)
     fjsp_object = FJSP(use_instance=False, file_name=file_name, path=path)
     print(fjsp_object.power_mrj_dict)
     print(fjsp_object.power_m_dict)
