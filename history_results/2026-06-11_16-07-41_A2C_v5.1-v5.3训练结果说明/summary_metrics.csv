@@ -1,0 +1,4 @@
+version,metric,segments,latest_rows,latest_epoch_start,latest_epoch_end,latest_first,latest_last,latest_min,latest_best_epoch,latest_max,latest_tail50_avg,all_rows,all_min
+v5.1,makespan,3,465,1,465,617.0,647.0,617.0,1,793.0,687.52,996,605.0
+v5.2,tardiness,1,504,1,504,7672.0,11683.0,5937.0,23,14753.0,12181.1,504,5937.0
+v5.3,energy,1,840,1,840,735386.0,743811.0,665652.0,48,917550.0,737534.18,840,665652.0
