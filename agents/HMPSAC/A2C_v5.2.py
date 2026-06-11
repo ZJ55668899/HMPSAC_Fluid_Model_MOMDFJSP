@@ -23,7 +23,8 @@ agent_version = '_v5.2'
 # 训练结果数据保存位置
 path_file_name = ensure_parent(HMPSAC_RESULTS_DIR / ('training' + agent_version + '.csv'))
 add_data_object = AddData(path_file_name)
-add_data_object.add_header(['epoch', 'tardiness'])
+add_data_object.add_header(['epoch', 'tardiness', 'episode_reward_sum', 'critic_loss',
+                            'actor_task_loss', 'actor_machine_loss'])
 # 监控训练过程
 window_name = 'Double Actor_critic' + agent_version
 vis = Visdom()
@@ -101,7 +102,7 @@ class DA3C(Base_Agent, Config):
         Base_Agent.__init__(self)  # 继承基础智能体类
         Config.__init__(self)  # 继承算法超参数类
         self.num_processes = multiprocessing.cpu_count()  # 电脑线程数量|四核八线程
-        self.worker_processes = max(1, self.num_processes - 3)  # 启用线程数
+        self.worker_processes = min(8, max(1, self.num_processes - 3))  # 启用线程数
         self.path = str(HMPSAC_DATA_DIR)  # 测试算例的存储位置
         self.file_name = 'DDT1.0_M15_S3'  # 测试算例的文件夹名字
         self.environment_test = MO_DFJSP_Environment(use_instance=False, path=self.path, file_name=self.file_name)  # 测试环境
@@ -286,6 +287,10 @@ class Actor_Critic_Worker(torch.multiprocessing.Process):
                 state = next_state
             # 计算损失和优势函数，并传入梯度值
             critic_loss, actor_task_loss, actor_machine_loss = self.calculate_total_loss()
+            episode_reward_sum = float(np.sum(self.episode_rewards))
+            critic_loss_value = float(critic_loss.detach().cpu().item())
+            actor_task_loss_value = float(actor_task_loss.detach().cpu().item())
+            actor_machine_loss_value = float(actor_machine_loss.detach().cpu().item())
             self.put_gradients_in_queue(critic_loss, actor_task_loss, actor_machine_loss)
             self.episode_number += 1
             # 每间隔1个周期运行一次测试算例并动态绘制目标值曲线
@@ -303,7 +308,9 @@ class Actor_Critic_Worker(torch.multiprocessing.Process):
                     state = next_state
                 vis.line(X=[self.counter.value], Y=[self.environment_test.delay_time_sum], win=win, update='append')
                 print("目标值：", self.environment_test.delay_time_sum)
-                add_data_object.add_data([self.counter.value, self.environment_test.delay_time_sum])  # 保存数据
+                add_data_object.add_data([self.counter.value, self.environment_test.delay_time_sum,
+                                          episode_reward_sum, critic_loss_value,
+                                          actor_task_loss_value, actor_machine_loss_value])  # 保存数据
                 if self.environment_test.delay_time_sum < self.objective_min:
                     self.objective_min = self.environment_test.delay_time_sum
                     self.save_actor_model()
@@ -338,15 +345,9 @@ class Actor_Critic_Worker(torch.multiprocessing.Process):
     def pick_action(self, policy, state):
         """贪婪的选择动作"""
         state = torch.from_numpy(state).float().unsqueeze(0)  # 状态转为tensor类型
-        actor_output = policy.forward(state)
-        if policy.name == "task_policy":
-            action_size = self.actions_size[0]
-        else:
-            action_size = self.actions_size[1]
-        # 动作分布实例
-        action_distribution = create_actor_distribution(self.action_types, actor_output, action_size)  # 动作分布实例
-        action = action_distribution.sample().cpu().numpy()  # 采样一个动作
-        action = action[0]
+        with torch.no_grad():
+            actor_output = policy.forward(state)
+            action = torch.argmax(actor_output, dim=-1).item()
         return action
 
     def get_critic_value(self, policy, state):
