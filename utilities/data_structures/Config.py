@@ -50,9 +50,9 @@ class Config():
                 "exploration_worker_difference": 2.0
             },
             "DA3C": {
-                "learning_rate": 0.003,
+                "learning_rate": 0.0003,
                 "discount_rate": 0.99,
-                "num_episodes_to_run": 1200,
+                "num_episodes_to_run": 1000,
                 "gradient_clipping_norm": 1.0,
                 "clip_rewards": True,
                 "normalise_rewards": True,
@@ -83,11 +83,11 @@ class Config():
                 "gradient_clipping_norm": 1.0
             },
             "HMP_SAC": {
-                "num_episodes_to_run": 2000,
+                "num_episodes_to_run": 1000,
                 "learning_rate": 0.0003,
                 "discount_rate": 0.99,
-                "buffer_size": 10000,
-                "batch_size": 256,
+                "buffer_size": 100000,
+                "batch_size": 32,
                 "gradient_clipping_norm": 1.0,
                 "min_steps_before_learning": 10000,
                 "tau": 0.005,

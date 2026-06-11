@@ -21,7 +21,7 @@ from utilities.Project_Paths import HMPSAC_DATA_DIR, HMPSAC_RESULTS_DIR, ensure_
 agent_version = '_v3.1'
 path_file_name = ensure_parent(HMPSAC_RESULTS_DIR / ('training' + agent_version + '.csv'))
 add_data_object = AddData(path_file_name)
-add_data_object.add_data(['epoch', 'makespan', 'tardiness', 'energy'])
+add_data_object.add_header(['epoch', 'makespan', 'tardiness', 'energy'])
 # 监控训练过程
 vis = Visdom()
 window_1 = 'completion_time' + agent_version
@@ -244,6 +244,8 @@ class SAC_Discrete(Base_Agent, Config):
             vis.line(X=[self.episode_number], Y=[environment.completion_time], win=window_1, update='append')
             vis.line(X=[self.episode_number], Y=[environment.delay_time_sum], win=window_2, update='append')
             vis.line(X=[self.episode_number], Y=[environment.energy_consumption], win=window_3, update='append')
+            add_data_object.add_data([self.episode_number, environment.completion_time,
+                                      environment.delay_time_sum, environment.energy_consumption])
             self.episode_number += 1
 
     def pick_action(self, state):
