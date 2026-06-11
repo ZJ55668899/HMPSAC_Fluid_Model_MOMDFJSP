@@ -1,0 +1,4 @@
+﻿version,metric,raw_rows,detected_runs,latest_run_rows,latest_start_epoch,latest_end_epoch,latest_min,latest_max,latest_mean,latest_last
+v5.1,makespan,539,1,539,1,539,607.0,710.0,645.0797773654916,684.0
+v5.2,total_tardiness,526,1,526,1,526,6638.0,10755.0,8420.12927756654,8091.0
+v5.3,energy_consumption,321,1,321,1,321,661581.0,756195.0,701708.7133956386,670168.0
