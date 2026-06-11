@@ -407,6 +407,10 @@ class AddData():
     def __init__(self, path_file_name):
         self.file_name = path_file_name
 
+    def add_header(self, header):
+        if not os.path.exists(self.file_name) or os.path.getsize(self.file_name) == 0:
+            self.add_data(header)
+
     def add_data(self, data):
         with open(self.file_name, mode='a', newline='') as file:
             writer = csv.writer(file)

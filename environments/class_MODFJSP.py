@@ -167,6 +167,8 @@ class FJSP(Instance, Data):
             Instance.__init__(self, **kwargs)
         else:
             Data.__init__(self, **kwargs)
+        if not hasattr(self, 'breakdown_m_dict'):
+            self.breakdown_m_dict = {m: [] for m in self.machine_tuple}
         # 实例化工件类型、工件、工序类型、工序和机器对象字典
         self.kind_task_dict = {(r, j): Tasks(r, j) for r in self.kind_tuple for j in self.task_r_dict[r]}  # 工序类型对象字典
         self.order_dict = {s: Order(s, self.time_arrive_s_dict[s], self.time_delivery_s_dict[s], self.count_sr_dict[s]) for s in self.order_tuple}  # 对象订单字典

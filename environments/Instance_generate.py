@@ -35,6 +35,7 @@ class Instance():
         self.task_r_dict, self.machine_rj_dict, self.kind_task_m_dict, self.time_rjm_dict, self.count_sr_dict, \
         self.time_arrive_s_dict, self.time_delivery_s_dict, self.kind_task_tuple, self.time_mrj_dict, \
         self.time_rj_dict, self.power_mrj_dict, self.power_m_dict = self.process_information()
+        self.breakdown_m_dict = {m: [] for m in self.machine_tuple}
 
     """工件类型总数"""
     @property

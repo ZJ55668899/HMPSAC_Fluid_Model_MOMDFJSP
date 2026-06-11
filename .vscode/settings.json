@@ -1,8 +1,25 @@
 {
+  // 指定 VS Code 使用 hmpsac 环境里的 Python 解释器。
   "python.defaultInterpreterPath": "D:\\miniforge\\envs\\hmpsac\\python.exe",
+
+  // 告诉 Pylance/静态分析器把项目根目录加入模块搜索路径。
+  // 这样 from agents...、from environments...、from utilities... 才能被正确解析。
   "python.analysis.extraPaths": [
     "${workspaceFolder}"
   ],
+
+  // 允许 Python 扩展自动搜索常见源码路径，辅助补全和导入解析。
   "python.analysis.autoSearchPaths": true,
-  "python.analysis.useLibraryCodeForTypes": true
+
+  // 允许 Pylance 查看第三方库源码，以提供更好的跳转、补全和类型提示。
+  "python.analysis.useLibraryCodeForTypes": true,
+
+  // 给 VS Code 内置终端设置环境变量。
+  // ${workspaceFolder} 会自动替换成当前项目根目录。
+  "terminal.integrated.env.windows": {
+    // 运行脚本时把项目根目录加入 Python 模块搜索路径。
+    // 这样可以直接执行 python .\agents\HMPSAC\A2C_v5.1.py，
+    // 不需要每次手动执行 $env:PYTHONPATH=(Get-Location).Path。
+    "PYTHONPATH": "${workspaceFolder}"
+  }
 }

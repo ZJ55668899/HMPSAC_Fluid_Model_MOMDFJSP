@@ -23,7 +23,7 @@ agent_version = '_v5.1'
 # 训练结果数据保存位置
 path_file_name = ensure_parent(HMPSAC_RESULTS_DIR / ('training' + agent_version + '.csv'))
 add_data_object = AddData(path_file_name)
-add_data_object.add_data(['epoch', 'makespan'])
+add_data_object.add_header(['epoch', 'makespan'])
 # 监控训练过程
 window_name = 'Double Actor_critic' + agent_version
 vis = Visdom()
