@@ -30,7 +30,10 @@ window_name = 'Double Actor_critic' + agent_version
 vis = Visdom()
 win = window_name
 title = window_name
-vis.line(X=[0], Y=[0], win=win, opts=dict(title=title, xlabel='epoch', ylable='energy_consumption', font=dict(family='Times New Roman')))
+window_reward = 'episode_reward' + agent_version
+window_critic_loss = 'critic_loss' + agent_version
+window_actor_task_loss = 'actor_task_loss' + agent_version
+window_actor_machine_loss = 'actor_machine_loss' + agent_version
 
 
 # 构建工序策略网络类
@@ -305,7 +308,27 @@ class Actor_Critic_Worker(torch.multiprocessing.Process):
                     actions = np.array([action_task, action_machine])  # 二维离散动作
                     next_state, reward, done = self.environment_test.step(actions, reward_policy=2)
                     state = next_state
-                vis.line(X=[self.counter.value], Y=[self.environment_test.energy_consumption], win=win, update='append')
+                vis_update = None if self.counter.value == 1 else 'append'
+                vis_opts = dict(title=title, xlabel='epoch', ylabel='energy_consumption',
+                                font=dict(family='Times New Roman')) if self.counter.value == 1 else None
+                vis.line(X=[self.counter.value], Y=[self.environment_test.energy_consumption],
+                         win=win, update=vis_update, opts=vis_opts)
+                vis.line(X=[self.counter.value], Y=[episode_reward_sum], win=window_reward,
+                         update=vis_update,
+                         opts=dict(title=window_reward, xlabel='epoch', ylabel='episode_reward_sum',
+                                   font=dict(family='Times New Roman')) if self.counter.value == 1 else None)
+                vis.line(X=[self.counter.value], Y=[critic_loss_value], win=window_critic_loss,
+                         update=vis_update,
+                         opts=dict(title=window_critic_loss, xlabel='epoch', ylabel='critic_loss',
+                                   font=dict(family='Times New Roman')) if self.counter.value == 1 else None)
+                vis.line(X=[self.counter.value], Y=[actor_task_loss_value], win=window_actor_task_loss,
+                         update=vis_update,
+                         opts=dict(title=window_actor_task_loss, xlabel='epoch', ylabel='actor_task_loss',
+                                   font=dict(family='Times New Roman')) if self.counter.value == 1 else None)
+                vis.line(X=[self.counter.value], Y=[actor_machine_loss_value], win=window_actor_machine_loss,
+                         update=vis_update,
+                         opts=dict(title=window_actor_machine_loss, xlabel='epoch', ylabel='actor_machine_loss',
+                                   font=dict(family='Times New Roman')) if self.counter.value == 1 else None)
                 print("目标值：", self.environment_test.energy_consumption)
                 add_data_object.add_data([self.counter.value, self.environment_test.energy_consumption,
                                           episode_reward_sum, critic_loss_value,

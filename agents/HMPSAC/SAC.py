@@ -21,18 +21,45 @@ from utilities.Project_Paths import HMPSAC_DATA_DIR, HMPSAC_RESULTS_DIR, ensure_
 agent_version = '_v3.1'
 path_file_name = ensure_parent(HMPSAC_RESULTS_DIR / ('training' + agent_version + '.csv'))
 add_data_object = AddData(path_file_name)
-add_data_object.add_header(['epoch', 'makespan', 'tardiness', 'energy'])
+add_data_object.add_header(['epoch', 'train_makespan', 'train_tardiness', 'train_energy',
+                            'episode_reward_sum', 'eval_makespan', 'eval_tardiness', 'eval_energy',
+                            'actor_loss', 'qf1_loss', 'qf2_loss', 'alpha_loss', 'alpha',
+                            'selected_policy_0_count', 'selected_policy_1_count', 'selected_policy_2_count',
+                            'global_step_number', 'memory_size'])
 # 监控训练过程
 vis = Visdom()
 window_1 = 'completion_time' + agent_version
 title_1 = window_1
-vis.line(X=[0], Y=[0], win=window_1, opts=dict(title=title_1, xlabel='epoch', ylable='completion_time', font=dict(family='Times New Roman')))
 window_2 = 'total_delay_time' + agent_version
 title_2 = window_2
-vis.line(X=[0], Y=[0], win=window_2, opts=dict(title=title_2, xlabel='epoch', ylable='total_delay_time', font=dict(family='Times New Roman')))
 window_3 = 'total_energy_consumption' + agent_version
 title_3 = window_3
-vis.line(X=[0], Y=[0], win=window_3, opts=dict(title=title_3, xlabel='epoch', ylable='total_energy_consumption', font=dict(family='Times New Roman')))
+window_reward = 'episode_reward' + agent_version
+window_actor_loss = 'actor_loss' + agent_version
+window_qf1_loss = 'qf1_loss' + agent_version
+window_qf2_loss = 'qf2_loss' + agent_version
+window_alpha_loss = 'alpha_loss' + agent_version
+window_alpha = 'alpha' + agent_version
+window_policy_0 = 'selected_policy_0_count' + agent_version
+window_policy_1 = 'selected_policy_1_count' + agent_version
+window_policy_2 = 'selected_policy_2_count' + agent_version
+_vis_windows_initialized = set()
+
+
+def plot_scalar(win, title, x, y, ylabel):
+    """Plot a scalar only after real data exists, avoiding misleading seed points."""
+    if y is None:
+        return
+    try:
+        y_value = float(y)
+    except (TypeError, ValueError):
+        return
+    if not np.isfinite(y_value):
+        return
+    opts = dict(title=title, xlabel='epoch', ylabel=ylabel, font=dict(family='Times New Roman'))
+    update = 'append' if win in _vis_windows_initialized else None
+    vis.line(X=[x], Y=[y_value], win=win, update=update, opts=opts)
+    _vis_windows_initialized.add(win)
 
 # 全局参数定义
 LOG_SIG_MAX = 2
@@ -199,6 +226,8 @@ class SAC_Discrete(Base_Agent, Config):
         """运行N个周期"""
         for epoch in range(self.num_episodes_to_run):
             environment = self.environment
+            learn_stats = []
+            selected_policy_counts = np.zeros(self.action_size, dtype=int)
             objectives_values = []
             # 基于三个目标策略网络获得实例的三个目标基准值
             for objective, policy in self.objectives_policy.items():
@@ -225,6 +254,7 @@ class SAC_Discrete(Base_Agent, Config):
             self.done = environment.done
             while not self.done:
                 self.action = self.pick_action(self.state)  # 选择目标网络
+                selected_policy_counts[self.action] += 1
                 action_task = self.pick_lower_action(policy=self.policy_dict[self.action]['task'], state=self.state,
                                                      action_size=self.action_size_dict['task'])
                 state_machine = np.append(self.state, action_task)  # 带选择的工序规则信息的状态
@@ -236,17 +266,68 @@ class SAC_Discrete(Base_Agent, Config):
                 self.save_experience(memory=self.memory, experience=(self.state, self.action, self.reward, self.next_state, self.done))
                 if self.time_for_critic_and_actor_to_learn():
                     for _ in range(self.hyper_parameters["learning_updates_per_learning_session"]):
-                        self.learn()
+                        learn_stats.append(self.learn())
                 self.state = self.next_state
                 self.global_step_number += 1
 
+            train_makespan = environment.completion_time
+            train_tardiness = environment.delay_time_sum
+            train_energy = environment.energy_consumption
+            episode_reward_sum = environment.reward_sum
+            eval_makespan, eval_tardiness, eval_energy = self.evaluate_current_policy(objectives_value)
+            loss_summary = self.summarise_learn_stats(learn_stats)
+
             print("总回报：", environment.reward_sum)
-            vis.line(X=[self.episode_number], Y=[environment.completion_time], win=window_1, update='append')
-            vis.line(X=[self.episode_number], Y=[environment.delay_time_sum], win=window_2, update='append')
-            vis.line(X=[self.episode_number], Y=[environment.energy_consumption], win=window_3, update='append')
-            add_data_object.add_data([self.episode_number, environment.completion_time,
-                                      environment.delay_time_sum, environment.energy_consumption])
+            plot_scalar(window_1, title_1, self.episode_number, eval_makespan, 'completion_time')
+            plot_scalar(window_2, title_2, self.episode_number, eval_tardiness, 'total_delay_time')
+            plot_scalar(window_3, title_3, self.episode_number, eval_energy, 'total_energy_consumption')
+            plot_scalar(window_reward, window_reward, self.episode_number, episode_reward_sum, 'episode_reward_sum')
+            plot_scalar(window_actor_loss, window_actor_loss, self.episode_number, loss_summary['actor_loss'], 'actor_loss')
+            plot_scalar(window_qf1_loss, window_qf1_loss, self.episode_number, loss_summary['qf1_loss'], 'qf1_loss')
+            plot_scalar(window_qf2_loss, window_qf2_loss, self.episode_number, loss_summary['qf2_loss'], 'qf2_loss')
+            plot_scalar(window_alpha_loss, window_alpha_loss, self.episode_number, loss_summary['alpha_loss'], 'alpha_loss')
+            plot_scalar(window_alpha, window_alpha, self.episode_number, loss_summary['alpha'], 'alpha')
+            plot_scalar(window_policy_0, window_policy_0, self.episode_number, selected_policy_counts[0], 'count')
+            plot_scalar(window_policy_1, window_policy_1, self.episode_number, selected_policy_counts[1], 'count')
+            plot_scalar(window_policy_2, window_policy_2, self.episode_number, selected_policy_counts[2], 'count')
+            add_data_object.add_data([self.episode_number, train_makespan, train_tardiness, train_energy,
+                                      episode_reward_sum, eval_makespan, eval_tardiness, eval_energy,
+                                      loss_summary['actor_loss'], loss_summary['qf1_loss'],
+                                      loss_summary['qf2_loss'], loss_summary['alpha_loss'],
+                                      loss_summary['alpha'], selected_policy_counts[0],
+                                      selected_policy_counts[1], selected_policy_counts[2],
+                                      self.global_step_number, len(self.memory)])
             self.episode_number += 1
+
+    @staticmethod
+    def summarise_learn_stats(learn_stats):
+        """Average learning diagnostics produced during one episode."""
+        keys = ['actor_loss', 'qf1_loss', 'qf2_loss', 'alpha_loss', 'alpha']
+        summary = {}
+        for key in keys:
+            values = [item[key] for item in learn_stats if np.isfinite(item[key])]
+            summary[key] = float(np.mean(values)) if values else float('nan')
+        return summary
+
+    def evaluate_current_policy(self, objectives_value):
+        """Run a deterministic evaluation rollout with argmax actions."""
+        environment = self.environment
+        state = environment.reset()
+        done = environment.done
+        while not done:
+            action = self.actor_pick_action(state=state, greedy=True)
+            action_task = self.pick_lower_action(policy=self.policy_dict[action]['task'], state=state,
+                                                 action_size=self.action_size_dict['task'], greedy=True)
+            state_machine = np.append(state, action_task)
+            action_machine = self.pick_lower_action(policy=self.policy_dict[action]['machine'], state=state_machine,
+                                                    action_size=self.action_size_dict['machine'], greedy=True)
+            action_task_machine = np.array([action_task, action_machine])
+            next_state, reward, done = environment.step(action_task_machine, reward_policy=3,
+                                                        completion=objectives_value[0],
+                                                        tardiness=objectives_value[1],
+                                                        energy_consumption=objectives_value[2])
+            state = next_state
+        return environment.completion_time, environment.delay_time_sum, environment.energy_consumption
 
     def pick_action(self, state):
         """采样动作"""
@@ -256,14 +337,16 @@ class SAC_Discrete(Base_Agent, Config):
             action = self.actor_pick_action(state=state)
         return action
 
-    def actor_pick_action(self, state):
+    def actor_pick_action(self, state, greedy=False):
         """采样一个动作"""
         state = torch.from_numpy(state).float().unsqueeze(0).to(self.device)
         if len(state.shape) == 1:
             state = state.unsqueeze(0)
-        action, _, _ = self.produce_action_and_action_info(state)
+        action, _, max_probability_action = self.produce_action_and_action_info(state)
+        if greedy:
+            action = max_probability_action
         action = action.detach().cpu().numpy()
-        return action[0]
+        return int(action[0])
 
     def produce_action_and_action_info(self, state):
         """输入状态，采样动作，各动作的概率和log概率，最大概率"""
@@ -277,13 +360,17 @@ class SAC_Discrete(Base_Agent, Config):
         log_action_probabilities = torch.log(action_probabilities + z)
         return action, (action_probabilities, log_action_probabilities), max_probability_action
 
-    def pick_lower_action(self, policy, state, action_size):
+    def pick_lower_action(self, policy, state, action_size, greedy=False):
         """基于策略采样一个动作"""
         state = torch.from_numpy(state).float().unsqueeze(0).to(self.device)
-        actor_output = policy.forward(state)
-        action_distribution = create_actor_distribution(self.action_types, actor_output, action_size)
-        action = action_distribution.sample().cpu().numpy()
-        action = int(action)
+        with torch.no_grad():
+            actor_output = policy.forward(state)
+            if greedy:
+                action = torch.argmax(actor_output, dim=-1).item()
+            else:
+                action_distribution = create_actor_distribution(self.action_types, actor_output, action_size)
+                action = action_distribution.sample().cpu().numpy()
+                action = int(action)
         return action
 
     def time_for_critic_and_actor_to_learn(self):
@@ -302,7 +389,15 @@ class SAC_Discrete(Base_Agent, Config):
             alpha_loss = self.calculate_entropy_tuning_loss(log_pi)
         else:
             alpha_loss = None
+        alpha_loss_value = float(alpha_loss.detach().cpu().item()) if alpha_loss is not None else float('nan')
         self.update_actor_parameters(policy_loss, alpha_loss)
+        return {
+            'qf1_loss': float(qf1_loss.detach().cpu().item()),
+            'qf2_loss': float(qf2_loss.detach().cpu().item()),
+            'actor_loss': float(policy_loss.detach().cpu().item()),
+            'alpha_loss': alpha_loss_value,
+            'alpha': float(self.alpha.detach().cpu().item()) if torch.is_tensor(self.alpha) else float(self.alpha)
+        }
 
     def sample_experiences(self):
         return self.memory.sample()
